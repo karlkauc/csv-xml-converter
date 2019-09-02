@@ -32,1611 +32,1782 @@ SOFTWARE.
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+
+// KK
+#include <filesystem>
+
 #include <stdlib.h>  // for Windows
-#include <windows.h>  // for Windows
+// #include <windows.h> // for Windows
 //#include <dirent.h>  // for Linux
 //#include <regex.h>
 //#include "stdafx.h"
 
 #include "libxml/tree.h"
 #include "libxml/parser.h"
-//#include "tree.h"
-//#include "parser.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-#define MAX_FILE_NAME_SIZE  256
-#define MAX_FILE_NAME_LEN  (MAX_FILE_NAME_SIZE - 1)
+#define MAX_FILE_NAME_SIZE 256
+#define MAX_FILE_NAME_LEN (MAX_FILE_NAME_SIZE - 1)
 
-#define MAX_PATH_SIZE  240
-#define MAX_PATH_LEN  (MAX_PATH_SIZE - 1)
+#define MAX_PATH_SIZE 240
+#define MAX_PATH_LEN (MAX_PATH_SIZE - 1)
 
-#define MAX_HEADER_SIZE  65536
-#define MAX_HEADER_LEN  (MAX_HEADER_SIZE - 1)
+#define MAX_HEADER_SIZE 65536
+#define MAX_HEADER_LEN (MAX_HEADER_SIZE - 1)
 
-#define MAX_LINE_SIZE  262144
-#define MAX_LINE_LEN  (MAX_LINE_SIZE - 1)
+#define MAX_LINE_SIZE 262144
+#define MAX_LINE_LEN (MAX_LINE_SIZE - 1)
 
-#define MAX_COUNTER_NAME_SIZE  128
-#define MAX_COUNTER_NAME_LEN  (MAX_COUNTER_NAME_SIZE - 1)
+#define MAX_COUNTER_NAME_SIZE 128
+#define MAX_COUNTER_NAME_LEN (MAX_COUNTER_NAME_SIZE - 1)
 
-#define MAX_ERROR_MESSAGE_SIZE  2048
-#define MAX_ERROR_MESSAGE_LEN  (MAX_ERROR_MESSAGE_SIZE - 1)
+#define MAX_ERROR_MESSAGE_SIZE 2048
+#define MAX_ERROR_MESSAGE_LEN (MAX_ERROR_MESSAGE_SIZE - 1)
 
-#define MAX_MAPPING_COLUMNS  25
-#define MAX_FIELD_MAPPINGS  500
-#define MAX_CSV_COLUMNS  500
+#define MAX_MAPPING_COLUMNS 25
+#define MAX_FIELD_MAPPINGS 500
+#define MAX_CSV_COLUMNS 500
 #define MAX_LOOPS 100
 
-#define MAX_VALUE_SIZE  16384
-#define MAX_VALUE_LEN  (MAX_VALUE_SIZE - 1)
+#define MAX_VALUE_SIZE 16384
+#define MAX_VALUE_LEN (MAX_VALUE_SIZE - 1)
 
-#define MAX_CONDITION_SIZE  1024
-#define MAX_CONDITION_LEN  (MAX_CONDITION_SIZE - 1)
+#define MAX_CONDITION_SIZE 1024
+#define MAX_CONDITION_LEN (MAX_CONDITION_SIZE - 1)
 
-#define MY_BUFFER_SIZE  65536
-#define MAX_MY_BUFFERS  64
+#define MY_BUFFER_SIZE 65536
+#define MAX_MY_BUFFERS 64
 
-#define MAX_DIGITS  64
+#define MAX_DIGITS 64
 
-//#define MAX_FORMAT_SIZE  1024
-//#define MAX_FORMAT_LEN  (MAX_FORMAT_SIZE - 1)
+  //#define MAX_FORMAT_SIZE  1024
+  //#define MAX_FORMAT_LEN  (MAX_FORMAT_SIZE - 1)
 
-#define MAX_TIMESTAMP_FORMAT_SIZE  32
-#define MAX_TIMESTAMP_FORMAT_LEN  (MAX_TIMESTAMP_FORMAT_SIZE - 1)
+#define MAX_TIMESTAMP_FORMAT_SIZE 32
+#define MAX_TIMESTAMP_FORMAT_LEN (MAX_TIMESTAMP_FORMAT_SIZE - 1)
 
-#define MAX_FORMAT_ERROR_SIZE  128
-#define MAX_FORMAT_ERROR_LEN  (MAX_FORMAT_ERROR_SIZE - 1)
+#define MAX_FORMAT_ERROR_SIZE 128
+#define MAX_FORMAT_ERROR_LEN (MAX_FORMAT_ERROR_SIZE - 1)
 
-#define MAX_UNIQUE_DOCUMENT_ID_SIZE  129
-#define MAX_UNIQUE_DOCUMENT_ID_LEN  (MAX_UNIQUE_DOCUMENT_ID_SIZE - 1)
+#define MAX_UNIQUE_DOCUMENT_ID_SIZE 129
+#define MAX_UNIQUE_DOCUMENT_ID_LEN (MAX_UNIQUE_DOCUMENT_ID_SIZE - 1)
 
-#define MAX_NODE_NAME_SIZE  256
-#define MAX_NODE_NAME_LEN  (MAX_NODE_NAME_SIZE - 1)
+#define MAX_NODE_NAME_SIZE 256
+#define MAX_NODE_NAME_LEN (MAX_NODE_NAME_SIZE - 1)
 
-#define MAX_XPATH_SIZE  1024
-#define MAX_XPATH_LEN  (MAX_XPATH_SIZE - 1)
+#define MAX_XPATH_SIZE 1024
+#define MAX_XPATH_LEN (MAX_XPATH_SIZE - 1)
 
-#define MAX_NODE_INDEX_SIZE  10
-#define MAX_NODE_INDEX_LEN  (MAX_NODE_INDEX_SIZE - 1)
+#define MAX_NODE_INDEX_SIZE 10
+#define MAX_NODE_INDEX_LEN (MAX_NODE_INDEX_SIZE - 1)
 
-#define MAX_ATTR_NAME_SIZE  128
-#define MAX_ATTR_NAME_LEN  (MAX_ATTR_NAME_SIZE - 1)
+#define MAX_ATTR_NAME_SIZE 128
+#define MAX_ATTR_NAME_LEN (MAX_ATTR_NAME_SIZE - 1)
 
-#define MAX_ATTR_VALUE_SIZE  256
-#define MAX_ATTR_VALUE_LEN  (MAX_ATTR_VALUE_SIZE - 1)
+#define MAX_ATTR_VALUE_SIZE 256
+#define MAX_ATTR_VALUE_LEN (MAX_ATTR_VALUE_SIZE - 1)
 
-// allow usage of original stdio functions like strcpy, memcpy, ...
-//#pragma warning(suppress : 4996)
+  // allow usage of original stdio functions like strcpy, memcpy, ...
+  //#pragma warning(suppress : 4996)
 
-// type definitions
+  // type definitions
 
-typedef char *pchar;
-typedef char const *cpchar;
+  // KK - workaround! ToDo: besser machen
+  // https://docs.microsoft.com/en-us/windows/win32/winprog/windows-data-types
+  typedef void *LPVOID;
+  typedef void *PVOID;
+  typedef PVOID HANDLE;
+  // /KK
 
-typedef enum { CSV2XML, XML2CSV } ConversionDirection;
+  typedef char *pchar;
+  typedef char const *cpchar;
 
-typedef struct {
-  char szName[MAX_ATTR_NAME_SIZE];
-  char szValue[MAX_ATTR_VALUE_SIZE];
-  cpchar pszXPath;
-} AttributeNameValue;
+  typedef enum
+  {
+    CSV2XML,
+    XML2CSV
+  } ConversionDirection;
 
-typedef struct {
-  int nCount;
-  int nMaxCount;
-  AttributeNameValue *aAttrNameValue;
-} AttributeNameValueList;
+  typedef struct
+  {
+    char szName[MAX_ATTR_NAME_SIZE];
+    char szValue[MAX_ATTR_VALUE_SIZE];
+    cpchar pszXPath;
+  } AttributeNameValue;
 
-typedef struct SimpleCondition {
-  cpchar szLeftPart;
-  cpchar szOperator;
-  cpchar szRightPart;
-  pchar szCurrentValue;
-} SimpleCondition;
+  typedef struct
+  {
+    int nCount;
+    int nMaxCount;
+    AttributeNameValue *aAttrNameValue;
+  } AttributeNameValueList;
 
-typedef struct ComplexCondition;
+  typedef struct SimpleCondition
+  {
+    cpchar szLeftPart;
+    cpchar szOperator;
+    cpchar szRightPart;
+    pchar szCurrentValue;
+  } SimpleCondition;
 
-typedef struct Condition {
-  SimpleCondition *pSimpleCondition;
-  ComplexCondition *pComplexCondition;
-} Condition;
+  typedef struct ComplexCondition;
 
-typedef enum { NO_OP, AND_OP, OR_OP } ConditionOperator;
+  typedef struct Condition
+  {
+    SimpleCondition *pSimpleCondition;
+    ComplexCondition *pComplexCondition;
+  } Condition;
 
-typedef struct ComplexCondition {
-  Condition LeftCondition;
-  ConditionOperator op;
-  Condition RightCondition;
-} ComplexCondition;
+  typedef enum
+  {
+    NO_OP,
+    AND_OP,
+    OR_OP
+  } ConditionOperator;
 
-typedef Condition *PCondition;
-typedef Condition const *CPCondition;
-typedef SimpleCondition *PSimpleCondition;
-typedef ComplexCondition *PComplexCondition;
+  typedef struct ComplexCondition
+  {
+    Condition LeftCondition;
+    ConditionOperator op;
+    Condition RightCondition;
+  } ComplexCondition;
 
-typedef struct {
-  char cOperation;  // Fix, Var, Map, Line/Loop
-  cpchar szContent;  // Constant, Variable, Column Name or XPath
-  cpchar szContent2;  // Constant, Variable, Column Name or XPath
-  cpchar szAttribute;
-  cpchar szShortName;
-  bool bMandatory;
-  bool bAddEmptyNodes;
-  char cType;  // Text, Integer, Number, Date, Boolean
-  int nMinLen;
-  int nMaxLen;
-  cpchar szFormat;
-  cpchar szTransform;
-  cpchar szDefault;
-  pchar szCondition;
-  Condition Condition;
-  cpchar szValue;
-} FieldDefinition;
+  typedef Condition *PCondition;
+  typedef Condition const *CPCondition;
+  typedef SimpleCondition *PSimpleCondition;
+  typedef ComplexCondition *PComplexCondition;
 
-typedef FieldDefinition const *CPFieldDefinition;
+  typedef struct
+  {
+    char cOperation;   // Fix, Var, Map, Line/Loop
+    cpchar szContent;  // Constant, Variable, Column Name or XPath
+    cpchar szContent2; // Constant, Variable, Column Name or XPath
+    cpchar szAttribute;
+    cpchar szShortName;
+    bool bMandatory;
+    bool bAddEmptyNodes;
+    char cType; // Text, Integer, Number, Date, Boolean
+    int nMinLen;
+    int nMaxLen;
+    cpchar szFormat;
+    cpchar szTransform;
+    cpchar szDefault;
+    pchar szCondition;
+    Condition Condition;
+    cpchar szValue;
+  } FieldDefinition;
 
-typedef struct {
-  FieldDefinition csv;
-  FieldDefinition xml;
-  int nCsvIndex;
-  int nSourceMapIndex;
-  int nLoopIndex;
-  int nRefUniqueLoopIndex;
-} FieldMapping;
+  typedef FieldDefinition const *CPFieldDefinition;
 
-typedef FieldMapping *PFieldMapping;
-typedef FieldMapping const *CPFieldMapping;
+  typedef struct
+  {
+    FieldDefinition csv;
+    FieldDefinition xml;
+    int nCsvIndex;
+    int nSourceMapIndex;
+    int nLoopIndex;
+    int nRefUniqueLoopIndex;
+  } FieldMapping;
 
-// global variables and constants
+  typedef FieldMapping *PFieldMapping;
+  typedef FieldMapping const *CPFieldMapping;
 
-const char szEmptyString[] = "";
-const char szCsvDefaultDateFormat[] = "DD.MM.YYYY";
-const char szXmlShortDateFormat[] = "YYYY-MM-DD";
-const char szDefaultBooleanFormat[] = ",true,false,";  // internal version of regular expression "(true,false)"
+  // global variables and constants
 
-const char szDigits[] = "0123456789";
-const char szSmallLetters[] = "abcdefghijklmnopqrstuvwxyz";
-const char szBigLetters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const char szEmptyString[] = "";
+  const char szCsvDefaultDateFormat[] = "DD.MM.YYYY";
+  const char szXmlShortDateFormat[] = "YYYY-MM-DD";
+  const char szDefaultBooleanFormat[] = ",true,false,"; // internal version of regular expression "(true,false)"
 
-const char szOperationFix[] = "FIX";
-const char szOperationVar[] = "VAR";
-const char szOperationMap[] = "MAP";
-const char szOperationChange[] = "CHANGE";
-const char szOperationLoop[] = "LOOP";
-const char szOperationIf[] = "IF";
-const char szOperationUnique[] = "UNIQUE";
-const char szOperationUnknown[] = "?";
+  const char szDigits[] = "0123456789";
+  const char szSmallLetters[] = "abcdefghijklmnopqrstuvwxyz";
+  const char szBigLetters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-ConversionDirection convDir;
-int nFieldMappings = 0;
-FieldMapping aFieldMapping[MAX_FIELD_MAPPINGS];
-int nFieldMappingBufferSize = 0;
-char *pFieldMappingsBuffer = NULL;
+  const char szOperationFix[] = "FIX";
+  const char szOperationVar[] = "VAR";
+  const char szOperationMap[] = "MAP";
+  const char szOperationChange[] = "CHANGE";
+  const char szOperationLoop[] = "LOOP";
+  const char szOperationIf[] = "IF";
+  const char szOperationUnique[] = "UNIQUE";
+  const char szOperationUnknown[] = "?";
 
-int nCsvDataBufferSize = 0;
-char *pCsvDataBuffer = NULL;
-int nMyBufferUsed = 0;
-int nMyBuffers = 0;
-pchar apMyBuffer[MAX_MY_BUFFERS];
-char cColumnDelimiter = ';';  // default column delimiter is semicolon
-char cDecimalPoint = '.';  // default decimal point is point
-char szIgnoreChars[8] = " \t";  // default space-like characters to be ignored during parsing a csv line
-int nCsvDataColumns = 0;
-int nCsvDataLines = 0;
-int nCsvDataFieldsBufferSize = 0;
-pchar *aCsvDataFields = NULL;
-int nRealCsvDataLines = 0;
-int nCurrentCsvLine = 0;
-int nLoops = 0;
-int anLoopIndex[MAX_LOOPS];
-int anLoopSize[MAX_LOOPS];
-PFieldMapping apLoopFieldMapping[MAX_LOOPS];
-char szCsvHeader[MAX_HEADER_SIZE] = "";
-char szCsvHeader2[MAX_HEADER_SIZE] = "";
-char szLineBuffer[MAX_LINE_SIZE];
-char szFieldValueBuffer[MAX_LINE_SIZE];
-char szUniqueDocumentID[MAX_UNIQUE_DOCUMENT_ID_SIZE];
-char szCounterPath[MAX_FILE_NAME_SIZE] = "";
-char szLastError[MAX_ERROR_MESSAGE_SIZE];
-char szLastFieldMappingError[MAX_ERROR_MESSAGE_SIZE];
-char szErrorFileName[MAX_FILE_NAME_SIZE];
-FILE *pErrorFile = NULL;
-int nErrors = 0;
-char szMappingErrorFileName[MAX_FILE_NAME_SIZE];
-FILE *pMappingErrorFile = NULL;
-int nMappingErrors = 0;
-pchar pszLastErrorPos = NULL;
-bool abColumnQuoted[MAX_CSV_COLUMNS];
-bool abColumnError[MAX_CSV_COLUMNS];
-xmlDocPtr pXmlDoc = NULL;
-bool bTrace = false; //true; //false;
-char cPathSeparator = '\\';  // change to '/' for linux
+  ConversionDirection convDir;
+  int nFieldMappings = 0;
+  FieldMapping aFieldMapping[MAX_FIELD_MAPPINGS];
+  int nFieldMappingBufferSize = 0;
+  char *pFieldMappingsBuffer = NULL;
 
-//--------------------------------------------------------------------------------------------------------
+  int nCsvDataBufferSize = 0;
+  char *pCsvDataBuffer = NULL;
+  int nMyBufferUsed = 0;
+  int nMyBuffers = 0;
+  pchar apMyBuffer[MAX_MY_BUFFERS];
+  char cColumnDelimiter = ';';   // default column delimiter is semicolon
+  char cDecimalPoint = '.';      // default decimal point is point
+  char szIgnoreChars[8] = " \t"; // default space-like characters to be ignored during parsing a csv line
+  int nCsvDataColumns = 0;
+  int nCsvDataLines = 0;
+  int nCsvDataFieldsBufferSize = 0;
+  pchar *aCsvDataFields = NULL;
+  int nRealCsvDataLines = 0;
+  int nCurrentCsvLine = 0;
+  int nLoops = 0;
+  int anLoopIndex[MAX_LOOPS];
+  int anLoopSize[MAX_LOOPS];
+  PFieldMapping apLoopFieldMapping[MAX_LOOPS];
+  char szCsvHeader[MAX_HEADER_SIZE] = "";
+  char szCsvHeader2[MAX_HEADER_SIZE] = "";
+  char szLineBuffer[MAX_LINE_SIZE];
+  char szFieldValueBuffer[MAX_LINE_SIZE];
+  char szUniqueDocumentID[MAX_UNIQUE_DOCUMENT_ID_SIZE];
+  char szCounterPath[MAX_FILE_NAME_SIZE] = "";
+  char szLastError[MAX_ERROR_MESSAGE_SIZE];
+  char szLastFieldMappingError[MAX_ERROR_MESSAGE_SIZE];
+  char szErrorFileName[MAX_FILE_NAME_SIZE];
+  FILE *pErrorFile = NULL;
+  int nErrors = 0;
+  char szMappingErrorFileName[MAX_FILE_NAME_SIZE];
+  FILE *pMappingErrorFile = NULL;
+  int nMappingErrors = 0;
+  pchar pszLastErrorPos = NULL;
+  bool abColumnQuoted[MAX_CSV_COLUMNS];
+  bool abColumnError[MAX_CSV_COLUMNS];
+  xmlDocPtr pXmlDoc = NULL;
+  bool bTrace = false;        //true; //false;
+  char cPathSeparator = '\\'; // change to '/' for linux
 
-int min(int a, int b)
-{
-  return (a < b) ? a : b;
-}
- 
-int max(int a, int b)
-{
-  return (a > b) ? a : b;
-}
+  //--------------------------------------------------------------------------------------------------------
 
+  int min(int a, int b)
+  {
+    return (a < b) ? a : b;
+  }
 
+  int max(int a, int b)
+  {
+    return (a > b) ? a : b;
+  }
 
-LPVOID MyGetMemory(int size)
-{
-  pchar pResult;
+  LPVOID MyGetMemory(int size)
+  {
+    pchar pResult;
 
-  if (size <= 0)
-    return NULL;
-
-  if (nMyBuffers == 0 || nMyBufferUsed + size > MY_BUFFER_SIZE) {
-    if (nMyBuffers >= MAX_MY_BUFFERS)
+    if (size <= 0)
       return NULL;
-    pResult = (pchar)malloc(MY_BUFFER_SIZE);
-    if (pResult == NULL)
-      return NULL;
-    apMyBuffer[nMyBuffers++] = pResult;
-    nMyBufferUsed = 0;
-  }
-  else
-    pResult = apMyBuffer[nMyBuffers-1];
 
-  pResult += nMyBufferUsed;
-  nMyBufferUsed += size;
-
-  return pResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool IsEmptyString(cpchar pszString)
-{
-  return (!pszString || !*pszString);
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void mystrncpy(char *dest, const char *src, size_t maxSize)
-{
-  // similar to strncpy, but ensuring null terminating character at the end
-
-  if (!dest || !src || !maxSize)
-    return;
-
-  if (strlen(src) >= maxSize) {
-    size_t len = maxSize - 1;
-    memcpy(dest, src, len);
-    dest[len] = '\0';
-  }
-  else
-    strcpy(dest, src);
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-char GetLastChar(cpchar pString)
-{
-  char cResult = '\0';
-	size_t len = strlen(pString);
-	if (len > 0)
-	  cResult = pString[len-1];
-	return cResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void CopyStringTill(char *pszDestination, cpchar pszSource, char cDelimiter)
-{
-  char *pszDest = pszDestination;
-  cpchar pszSrc = pszSource;
-
-  while (*pszSrc && *pszSrc != cDelimiter)
-    *pszDest++ = *pszSrc++;
-
-  *pszDest = '\0';
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void RemoveEndChars(char *pszString, cpchar pszIgnoreChars)
-{
-  char *pLastChar = pszString + strlen(pszString) - 1;
-
-  while (pLastChar >= pszString && strchr(pszIgnoreChars, *pLastChar))
-    *pLastChar-- = '\0';
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void RemoveLastChar(char *pszString, char cLastChar)
-{
-  char *pLastChar = pszString + strlen(pszString) - 1;
-
-  if (*pLastChar == cLastChar)
-    *pLastChar = '\0';
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int SplitString(char *pszString, char cSeparator, pchar *aszValue, int nMaxValues, cpchar pszIgnoreChars)
-{
-  int nValues = 0;
-  char *pPos = pszString;
-  char *pSep = strchr(pszString, cSeparator);
-  char *pEnd = NULL;
-
-  while (*pPos && strchr(pszIgnoreChars, *pPos))
-    pPos++;
-
-  if (*pPos) {
-    while (pSep) {
-      *pSep = '\0';
-      RemoveEndChars(pPos, pszIgnoreChars);
-      aszValue[nValues++] = pPos;
-      pPos = pSep + 1;
-      while (*pPos && strchr(pszIgnoreChars, *pPos))
-        pPos++;
-      pSep = strchr(pPos, cSeparator);
-    }
-
-    aszValue[nValues++] = pPos;
-    RemoveEndChars(pPos, pszIgnoreChars);
-  }
-
-  return nValues;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void ExtractPath(char *pszPath, cpchar pszFileName)
-{
-  cpchar pBackSlash = strchr(pszFileName, '\\');
-  cpchar pSlash = strchr(pszFileName, '/');
-  cpchar pPos = strchr(pszFileName, ':');
-
-  if (pBackSlash) {
-    pPos = pBackSlash;
-    pBackSlash = strchr(pPos+1, '\\');
-    // search last back-slash in file name
-    while (pBackSlash) {
-      pPos = pBackSlash;
-      pBackSlash = strchr(pPos+1, '\\');
-    }
-  }
-  else
-    if (pSlash) {
-      pPos = pSlash;
-      pSlash = strchr(pPos+1, '/');
-      // search last slash in file name
-      while (pSlash) {
-        pPos = pSlash;
-        pSlash = strchr(pPos+1, '/');
-      }
-    }
-
-  if (pPos) {
-    int len = pPos - pszFileName + 1;
-    memcpy(pszPath, pszFileName, len);
-    pszPath[len] = '\0';
-  }
-  else
-    *pszPath = '\0';
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void ReplaceExtension(char *szFileName, cpchar szExtension)
-{
-  int nLen = strlen(szFileName);
-  int i = nLen - 1;
-  char ch;
-
-  while (i > 0) {
-    ch = szFileName[i];
-    if (ch == '.') {
-      strcpy(szFileName + i + 1, szExtension);
-      return;
-    }
-    if (strchr("/\\:", ch))
-      exit;
-    i--;
-  }
-
-  strcat(szFileName, ".");
-  strcat(szFileName, szExtension);
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool FileExists(cpchar szFileName)
-{
-  FILE *pFile = NULL;
-
-  errno_t error_code = fopen_s(&pFile, szFileName, "r");
-
-  if (pFile) {
-    fclose(pFile);
-    return true;
-  }
-
-  return false;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool FindUniqueFileName(char *szFileName)
-{
-  char szUniqueFileName[MAX_FILE_NAME_SIZE];
-  int nLen = strlen(szFileName);
-  int i = nLen - 1;
-  int nPos = nLen;  // default for index is end of file name
-  char ch;
-
-  if (!FileExists(szFileName))
-    return true;  // file name already unique (not existing at the moment)
-
-  if (nLen + 7 > MAX_FILE_NAME_LEN)
-    return false;  // source file name too long (cannot insert seven additional characters)
-
-  // search start of file extension (dot character)
-  while (i > 0) {
-    ch = szFileName[i];
-    if (ch == '.') {
-      nPos = i;
-      exit;
-    }
-    if (strchr("/\\:", ch))
-      exit;
-    i--;
-  }
-
-  strcpy(szUniqueFileName, szFileName);
-
-  for (i = 1; i <= 999999; i++) {
-    // insert counter just before file extension
-    sprintf(szUniqueFileName + nPos, "-%06d%s", i, szFileName + nPos);
-    // is generated file name unique ?
-    if (!FileExists(szUniqueFileName)) {
-      // generated file name is unique (not existing at the moment)
-      strcpy(szFileName, szUniqueFileName);
-      return true;
-    }
-  }
-
-  // no unique file name found
-  return false;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-cpchar GetOperationLongName(char cOperation)
-{
-  cpchar pszResult = szOperationUnknown;
-
-  if (cOperation == 'F') pszResult = szOperationFix;
-  if (cOperation == 'V') pszResult = szOperationVar;
-  if (cOperation == 'M') pszResult = szOperationMap;
-  if (cOperation == 'C') pszResult = szOperationChange;
-  if (cOperation == 'L') pszResult = szOperationLoop;
-  if (cOperation == 'I') pszResult = szOperationIf;
-  if (cOperation == 'U') pszResult = szOperationUnique;
-
-  return pszResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void AddLog(cpchar szFileName, cpchar szLogType, cpchar szConversion, cpchar szLastError, int nErrors, int nCsvDataLines, cpchar szInputFileName, cpchar szMappingFileName, cpchar szTemplateFileName, 
-            cpchar szOutputFileName, cpchar szProcessedFileName, cpchar szUniqueDocumentID, cpchar szErrorFileName)
-{
-  FILE *pFile = NULL;
-  errno_t error_code;
-  char szNow[20];
-
-  if (*szFileName) {
-    error_code = fopen_s(&pFile, szFileName, "a");
-    if (pFile) {
-      time_t now = time(NULL);
-      struct tm* tm_info;
-      tm_info = localtime(&now);
-      strftime(szNow, 20, "%Y-%m-%d %H:%M:%S", tm_info);  // e.g. "2018-12-08 12:30:00"
-
-      fprintf(pFile, "%s;%s;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s;%s\n", szNow, szLogType, szConversion, szLastError, nErrors, nCsvDataLines, szInputFileName, szMappingFileName, szTemplateFileName,
-              szOutputFileName, szProcessedFileName, szUniqueDocumentID, szErrorFileName);
-
-      fclose(pFile);
+    if (nMyBuffers == 0 || nMyBufferUsed + size > MY_BUFFER_SIZE)
+    {
+      if (nMyBuffers >= MAX_MY_BUFFERS)
+        return NULL;
+      pResult = (pchar)malloc(MY_BUFFER_SIZE);
+      if (pResult == NULL)
+        return NULL;
+      apMyBuffer[nMyBuffers++] = pResult;
+      nMyBufferUsed = 0;
     }
     else
-      printf("Cannot append to file %s (error %d)\n", szFileName, error_code);
+      pResult = apMyBuffer[nMyBuffers - 1];
+
+    pResult += nMyBufferUsed;
+    nMyBufferUsed += size;
+
+    return pResult;
   }
-}
 
-//--------------------------------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------------------------
 
-int CheckLogFileHeader(cpchar szFileName)
-{
-  FILE *pFile = NULL;
-  errno_t error_code;
+  bool IsEmptyString(cpchar pszString)
+  {
+    return (!pszString || !*pszString);
+  }
 
-  if (!FileExists(szFileName)) {
-    error_code = fopen_s(&pFile, szFileName, "w");
-    if (pFile) {
-      fputs("TIMESTAMP;LOG_TYPE;CONVERSION;ERROR;CONTENT_ERRORS;CSV_DATA_RECORDS;INPUT_FILE_NAME;MAPPING_FILE_NAME;TEMPLATE_FILE_NAME;OUTPUT_FILE_NAME;PROCESSED_FILE_NAME;UNIQUE_DOCUMENT_ID;ERROR_FILE_NAME\n", pFile);
+  //--------------------------------------------------------------------------------------------------------
+
+  void mystrncpy(char *dest, const char *src, size_t maxSize)
+  {
+    // similar to strncpy, but ensuring null terminating character at the end
+
+    if (!dest || !src || !maxSize)
+      return;
+
+    if (strlen(src) >= maxSize)
+    {
+      size_t len = maxSize - 1;
+      memcpy(dest, src, len);
+      dest[len] = '\0';
+    }
+    else
+      strcpy(dest, src);
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  char GetLastChar(cpchar pString)
+  {
+    char cResult = '\0';
+    size_t len = strlen(pString);
+    if (len > 0)
+      cResult = pString[len - 1];
+    return cResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void CopyStringTill(char *pszDestination, cpchar pszSource, char cDelimiter)
+  {
+    char *pszDest = pszDestination;
+    cpchar pszSrc = pszSource;
+
+    while (*pszSrc && *pszSrc != cDelimiter)
+      *pszDest++ = *pszSrc++;
+
+    *pszDest = '\0';
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void RemoveEndChars(char *pszString, cpchar pszIgnoreChars)
+  {
+    char *pLastChar = pszString + strlen(pszString) - 1;
+
+    while (pLastChar >= pszString && strchr(pszIgnoreChars, *pLastChar))
+      *pLastChar-- = '\0';
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void RemoveLastChar(char *pszString, char cLastChar)
+  {
+    char *pLastChar = pszString + strlen(pszString) - 1;
+
+    if (*pLastChar == cLastChar)
+      *pLastChar = '\0';
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int SplitString(char *pszString, char cSeparator, pchar *aszValue, int nMaxValues, cpchar pszIgnoreChars)
+  {
+    int nValues = 0;
+    char *pPos = pszString;
+    char *pSep = strchr(pszString, cSeparator);
+    char *pEnd = NULL;
+
+    while (*pPos && strchr(pszIgnoreChars, *pPos))
+      pPos++;
+
+    if (*pPos)
+    {
+      while (pSep)
+      {
+        *pSep = '\0';
+        RemoveEndChars(pPos, pszIgnoreChars);
+        aszValue[nValues++] = pPos;
+        pPos = pSep + 1;
+        while (*pPos && strchr(pszIgnoreChars, *pPos))
+          pPos++;
+        pSep = strchr(pPos, cSeparator);
+      }
+
+      aszValue[nValues++] = pPos;
+      RemoveEndChars(pPos, pszIgnoreChars);
+    }
+
+    return nValues;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void ExtractPath(char *pszPath, cpchar pszFileName)
+  {
+    cpchar pBackSlash = strchr(pszFileName, '\\');
+    cpchar pSlash = strchr(pszFileName, '/');
+    cpchar pPos = strchr(pszFileName, ':');
+
+    if (pBackSlash)
+    {
+      pPos = pBackSlash;
+      pBackSlash = strchr(pPos + 1, '\\');
+      // search last back-slash in file name
+      while (pBackSlash)
+      {
+        pPos = pBackSlash;
+        pBackSlash = strchr(pPos + 1, '\\');
+      }
+    }
+    else if (pSlash)
+    {
+      pPos = pSlash;
+      pSlash = strchr(pPos + 1, '/');
+      // search last slash in file name
+      while (pSlash)
+      {
+        pPos = pSlash;
+        pSlash = strchr(pPos + 1, '/');
+      }
+    }
+
+    if (pPos)
+    {
+      int len = pPos - pszFileName + 1;
+      memcpy(pszPath, pszFileName, len);
+      pszPath[len] = '\0';
+    }
+    else
+      *pszPath = '\0';
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void ReplaceExtension(char *szFileName, cpchar szExtension)
+  {
+    int nLen = strlen(szFileName);
+    int i = nLen - 1;
+    char ch;
+
+    while (i > 0)
+    {
+      ch = szFileName[i];
+      if (ch == '.')
+      {
+        strcpy(szFileName + i + 1, szExtension);
+        return;
+      }
+      if (strchr("/\\:", ch))
+        exit(0);
+      i--;
+    }
+
+    strcat(szFileName, ".");
+    strcat(szFileName, szExtension);
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  bool FileExists(cpchar szFileName)
+  {
+    FILE *pFile = NULL;
+
+    errno_t error_code = fopen_s(&pFile, szFileName, "r");
+
+    if (pFile)
+    {
       fclose(pFile);
-      return 0;
-    }
-    sprintf(szLastError, "Cannot create log file %s (error %d)", szFileName, error_code);
-    puts(szLastError);
-    return 1;
-  }
-
-  return 0;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int LogMappingError(int nMapIndex, cpchar szOperation, cpchar szColumnName, cpchar szError)
-{
-  int nReturnCode = 0;
-  errno_t error_code;
-
-  nMappingErrors++;
-
-  if (!pMappingErrorFile) {
-    // open file in write mode
-    error_code = fopen_s(&pMappingErrorFile, szMappingErrorFileName, "w");
-    if (!pMappingErrorFile) {
-      printf("Cannot open file '%s' (error code %d)\n", szMappingErrorFileName, error_code);
-      return -2;
+      return true;
     }
 
-    // write header of error file
-    nReturnCode = fputs("LINE;OPERATION;COLUMN_NAME;ERROR\n", pMappingErrorFile);
+    return false;
   }
 
-  nReturnCode = fprintf(pMappingErrorFile, "%d;\"%s\";\"%s\";\"%s\"\n", nMapIndex + 1, szOperation, szColumnName, szError);
+  //--------------------------------------------------------------------------------------------------------
 
-  return nReturnCode;
-}
+  bool FindUniqueFileName(char *szFileName)
+  {
+    char szUniqueFileName[MAX_FILE_NAME_SIZE];
+    int nLen = strlen(szFileName);
+    int i = nLen - 1;
+    int nPos = nLen; // default for index is end of file name
+    char ch;
 
-//--------------------------------------------------------------------------------------------------------
+    if (!FileExists(szFileName))
+      return true; // file name already unique (not existing at the moment)
 
-int LogXmlError(int nLine, int nColumnIndex, cpchar szColumnName, cpchar szXPath, cpchar szValue, cpchar szError)
-{
-  int nReturnCode = 0;
-  errno_t error_code;
+    if (nLen + 7 > MAX_FILE_NAME_LEN)
+      return false; // source file name too long (cannot insert seven additional characters)
 
-  if (nColumnIndex >= 0 && nColumnIndex < nCsvDataColumns && abColumnError[nColumnIndex])
-    return 0;  // report only first error for each column
-
-  nErrors++;
-
-  if (convDir == CSV2XML && nColumnIndex >= 0 && nColumnIndex < nCsvDataColumns)
-    abColumnError[nColumnIndex] = true;
-
-  if (!pErrorFile) {
-    // open file in write mode
-    error_code = fopen_s(&pErrorFile, szErrorFileName, "w");
-    if (!pErrorFile) {
-      printf("Cannot open file '%s' (error code %d)\n", szErrorFileName, error_code);
-      return -2;
+    // search start of file extension (dot character)
+    while (i > 0)
+    {
+      ch = szFileName[i];
+      if (ch == '.')
+      {
+        nPos = i;
+        exit(0);
+      }
+      if (strchr("/\\:", ch))
+        exit(0);
+      i--;
     }
 
-    // write header of error file
-    nReturnCode = fputs("LINE;COLUMN_NR;COLUMN_NAME;XPATH;VALUE;ERROR\n", pErrorFile);
-  }
+    strcpy(szUniqueFileName, szFileName);
 
-  if (*szXPath)
-    nReturnCode = fprintf(pErrorFile, "%d;%d;\"%s\";\"%s\";\"%s\";\"%s\"\n", nLine, nColumnIndex + 1, szColumnName, szXPath, szValue, szError);
-  else
-    nReturnCode = fprintf(pErrorFile, "%d;%d;\"%s\";;\"%s\";\"%s\"\n", nLine, nColumnIndex + 1, szColumnName, szValue, szError);
-
-  return nReturnCode;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int LogCsvError(int nLine, int nColumnIndex, cpchar szColumnName, cpchar szValue, cpchar szError)
-{
-  return LogXmlError(nLine, nColumnIndex, szColumnName, szEmptyString, szValue, szError);
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int MyLoadFile(cpchar pszFileName, char *pBuffer, int nMaxSize)
-{
-  int nBytesRead = 0;
-  FILE *pFile = NULL;
-  errno_t error_code;
-
-  error_code = fopen_s(&pFile, pszFileName, "r");
-  if (!pFile) {
-    sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, error_code);
-    puts(szLastError);
-    return -1;
-  }
-
-  // clear read buffer
-  memset(pBuffer, 0, nMaxSize);
-
-  // read content of file
-  nBytesRead = fread(pBuffer, nMaxSize-1, 1, pFile);
-
-  // close file
-  fclose(pFile);
-
-  return nBytesRead;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int MyWriteFile(cpchar pszFileName, cpchar pszBuffer)
-{
-  int nReturnCode = 0;
-  FILE *pFile = NULL;
-  errno_t error_code;
-
-  error_code = fopen_s(&pFile, pszFileName, "w");
-  if (!pFile) {
-    sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, error_code);
-    puts(szLastError);
-    return -1;
-  }
-
-  // write content of file
-  nReturnCode = fputs(pszBuffer, pFile);
-  if (nReturnCode == EOF) {
-    sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, nReturnCode);
-    puts(szLastError);
-    return -2;
-  }
-
-  // close file
-  nReturnCode = fclose(pFile);
-
-  return nReturnCode;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool EvaluateCondition(xmlNodePtr pNode, CPCondition pCondition)
-{
-  bool bResult = false, bResult2;
-	cpchar pszAttributeValue;
-  int nCompareResult;
-
-  if (pCondition->pComplexCondition) {
-    bResult = EvaluateCondition(pNode, &pCondition->pComplexCondition->LeftCondition);
-    bResult2 = EvaluateCondition(pNode, &pCondition->pComplexCondition->RightCondition);
-    if (pCondition->pComplexCondition->op == AND_OP)
-      bResult = bResult && bResult2;
-    if (pCondition->pComplexCondition->op == OR_OP)
-      bResult = bResult || bResult2;
-  }
-  
-  if (pCondition->pSimpleCondition && *pCondition->pSimpleCondition->szLeftPart == '@') {
-    pszAttributeValue = (cpchar)xmlGetProp(pNode, (const xmlChar *)pCondition->pSimpleCondition->szLeftPart + 1);
-    if (!pszAttributeValue)
-      pszAttributeValue = szEmptyString;
-
-    nCompareResult = strcmp(pszAttributeValue, pCondition->pSimpleCondition->szCurrentValue);
-
-    if (strcmp(pCondition->pSimpleCondition->szOperator, "=") == 0)
-      bResult = (nCompareResult == 0);
-    if (strcmp(pCondition->pSimpleCondition->szOperator, "!=") == 0)
-      bResult = (nCompareResult != 0);
-    if (strcmp(pCondition->pSimpleCondition->szOperator, "<") == 0)
-      bResult = (nCompareResult < 0);
-    if (strcmp(pCondition->pSimpleCondition->szOperator, "<=") == 0)
-      bResult = (nCompareResult <= 0);
-    if (strcmp(pCondition->pSimpleCondition->szOperator, ">") == 0)
-      bResult = (nCompareResult > 0);
-    if (strcmp(pCondition->pSimpleCondition->szOperator, ">=") == 0)
-      bResult = (nCompareResult >= 0);
-  }
-
-  return bResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-xmlNodePtr GetNode(xmlNodePtr pParentNode, const char *pXPath, bool bCreateIfNotFound = false, AttributeNameValueList *pAttributeNameValueList = NULL, CPCondition pCondition = NULL)
-{
-  char szNodeName[MAX_NODE_NAME_SIZE];
-  cpchar pChildXPath = NULL;
-	cpchar pszAttributeValue = NULL;
-  cpchar pSlash = NULL;
-  char *pPos = NULL;
-  xmlNodePtr pChildNode = NULL;
-  xmlNodePtr pResult = NULL;
-  CPCondition pCleanCondition = NULL;
-  int nRequestedNodeIndex = 1;
-  int nFoundNodeIndex = 0;
-  int i;
-  bool bMatch;
-
-  // real condition ?
-  if (pCondition && (pCondition->pComplexCondition || pCondition->pSimpleCondition))
-    pCleanCondition = pCondition;
-
-  // Extract node name from xpath (first position of slash)
-  pSlash = strchr(pXPath, '/');
-  if (pSlash == NULL)
-    strcpy_s(szNodeName, MAX_NODE_NAME_SIZE, pXPath);
-  else {
-    pChildXPath = pSlash + 1;
-    if (!*pChildXPath)
-      pChildXPath = NULL;
-    int len = min(pSlash - pXPath, MAX_NODE_NAME_SIZE);
-    mystrncpy(szNodeName, pXPath, len + 1);
-    //szNodeName[len] = '\0';
-  }
-
-  // Extract node index (if existing)
-  pPos = strchr(szNodeName, '[');
-  if (pPos != NULL) {
-    *pPos++ = '\0';
-    nRequestedNodeIndex = atoi(pPos);
-    if (nRequestedNodeIndex < 1)
-      nRequestedNodeIndex = 1;
-    //if (nRequestedNodeIndex > MAX_NODE_INDEX)
-    //  nRequestedNodeIndex = MAX_NODE_INDEX;
-  }
-
-  // search for <szNodeName> (with requested node index) within children of pParentNode
-  pChildNode = pParentNode->children;
-
-	if (((pAttributeNameValueList && pAttributeNameValueList->nCount > 0) || pCleanCondition) && pChildXPath == NULL) {
-		// search for right node with node name and conditions for attribute values
-		while (pChildNode != NULL) {
-			if (strcmp((cpchar)pChildNode->name, szNodeName) == 0) {
-				nFoundNodeIndex++;
-        bMatch = true;
-
-        if (pCleanCondition) {
-          bMatch = EvaluateCondition(pChildNode, pCleanCondition);
-        }
-        else {
-          for (i = 0; i < pAttributeNameValueList->nCount && bMatch; i++) {
-				    // xmlChar *xmlGetProp (const xmlNode *node, const xmlChar *name)
-				    pszAttributeValue = (cpchar)xmlGetProp(pChildNode, (const xmlChar *)pAttributeNameValueList->aAttrNameValue[i].szName);
-            if (!pszAttributeValue)
-              pszAttributeValue = szEmptyString;
-            if (strcmp(pszAttributeValue, pAttributeNameValueList->aAttrNameValue[i].szValue) != 0)
-              bMatch = false;
-          }
-        }
-
-				if (bMatch)
-					return pChildNode;  // node with matching attribute value found
-			}
-			pChildNode = pChildNode->next;
-		}
-	}
-	else {
-		// search for right node with node name and node index
-		while (pChildNode != NULL) {
-			if (strcmp((const char*)pChildNode->name, szNodeName) == 0) {
-				nFoundNodeIndex++;
-				if (nFoundNodeIndex == nRequestedNodeIndex) {
-					// <szNodeName> with requested node index found
-					if (pChildXPath)
-						return GetNode(pChildNode, pChildXPath, bCreateIfNotFound, pAttributeNameValueList, pCleanCondition);
-					else
-						return pChildNode;
-				}
-			}
-			pChildNode = pChildNode->next;
-		}
-	}
-
-  // <szNodeName> with requested node index or attribute value not found
-  if (nFoundNodeIndex < nRequestedNodeIndex && !bCreateIfNotFound)
-    return NULL;
-
-	if (pAttributeNameValueList && pAttributeNameValueList->nCount > 0 && pChildXPath == NULL) {
-		// create <szNodeName> with requested attribute value
-		pChildNode = xmlNewChild(pParentNode, NULL, (const xmlChar *)szNodeName, NULL);
-
-    for (i = 0; i < pAttributeNameValueList->nCount; i++) {
-		  // xmlAttrPtr	xmlSetProp(xmlNodePtr node, const xmlChar *name, const xmlChar *value)
-		  xmlSetProp(pChildNode, (const xmlChar *)pAttributeNameValueList->aAttrNameValue[i].szName, (const xmlChar *)pAttributeNameValueList->aAttrNameValue[i].szValue);
+    for (i = 1; i <= 999999; i++)
+    {
+      // insert counter just before file extension
+      sprintf(szUniqueFileName + nPos, "-%06d%s", i, szFileName + nPos);
+      // is generated file name unique ?
+      if (!FileExists(szUniqueFileName))
+      {
+        // generated file name is unique (not existing at the moment)
+        strcpy(szFileName, szUniqueFileName);
+        return true;
+      }
     }
-	}
-	else {
-		// create <szNodeName> with requested node index
-		while (nFoundNodeIndex < nRequestedNodeIndex) {
-			pChildNode = xmlNewChild(pParentNode, NULL, (const xmlChar *)szNodeName, NULL);
-			nFoundNodeIndex++;
-		}
-	}
 
-  // end of XPath reached ?
-  if (pChildXPath)
-    pResult = GetNode(pChildNode, pChildXPath, bCreateIfNotFound, pAttributeNameValueList, pCleanCondition);
-  else
-    pResult = pChildNode;
-
-  return pResult;
-}
-// end of function "GetNode"
-
-//--------------------------------------------------------------------------------------------------------
-
-xmlNodePtr GetCreateNode(xmlNodePtr pParentNode, const char *pXPath, AttributeNameValueList *pAttributeNameValueList = NULL, CPCondition pCondition = NULL)
-{
-  return GetNode(pParentNode, pXPath, true, pAttributeNameValueList, pCondition);
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int GetNodeCount(xmlNodePtr pParentNode, const char *pXPath)
-{
-  char szNodeName[MAX_NODE_NAME_SIZE];
-  const char *pChildXPath = NULL;
-  const char *pSlash = NULL;
-  char *pPos = NULL;
-  xmlNodePtr pChildNode = NULL;
-  int nRequestedNodeIndex = 1;
-  int nFoundNodeIndex = 0;
-  int nCount = 0;
-
-  // Extract node name from xpath (first position of slash)
-  pSlash = strchr(pXPath, '/');
-  if (pSlash == NULL)
-    strcpy_s(szNodeName, MAX_NODE_NAME_SIZE, pXPath);
-  else {
-    pChildXPath = pSlash + 1;
-    if (!*pChildXPath)
-      pChildXPath = NULL;
-    int len = min(pSlash - pXPath, MAX_NODE_NAME_SIZE);
-    mystrncpy(szNodeName, pXPath, len + 1);
-    //szNodeName[len] = '\0';
+    // no unique file name found
+    return false;
   }
 
-  // Extract node index (if existing)
-  pPos = strchr(szNodeName, '[');
-  if (pPos != NULL) {
-    *pPos++ = '\0';
-    nRequestedNodeIndex = atoi(pPos);
-    if (nRequestedNodeIndex < 1)
-      nRequestedNodeIndex = 1;
-    //if (nRequestedNodeIndex > MAX_NODE_INDEX)
-    //  nRequestedNodeIndex = MAX_NODE_INDEX;
+  //--------------------------------------------------------------------------------------------------------
+
+  cpchar GetOperationLongName(char cOperation)
+  {
+    cpchar pszResult = szOperationUnknown;
+
+    if (cOperation == 'F')
+      pszResult = szOperationFix;
+    if (cOperation == 'V')
+      pszResult = szOperationVar;
+    if (cOperation == 'M')
+      pszResult = szOperationMap;
+    if (cOperation == 'C')
+      pszResult = szOperationChange;
+    if (cOperation == 'L')
+      pszResult = szOperationLoop;
+    if (cOperation == 'I')
+      pszResult = szOperationIf;
+    if (cOperation == 'U')
+      pszResult = szOperationUnique;
+
+    return pszResult;
   }
-  // end of xpath reached ?
-  if (!pChildXPath)
-    nRequestedNodeIndex = -1;
 
-  // search for <szNodeName> within children of pParentNode
-  pChildNode = pParentNode->children;
+  //--------------------------------------------------------------------------------------------------------
 
-  while (pChildNode != NULL) {
-    if (strcmp((const char*)pChildNode->name, szNodeName) == 0) {
-      if (pChildXPath) {
-        nFoundNodeIndex++;
-        if (nFoundNodeIndex == nRequestedNodeIndex)
-          // <szNodeName> with requested node index found
-          return GetNodeCount(pChildNode, pChildXPath);
+  void AddLog(cpchar szFileName, cpchar szLogType, cpchar szConversion, cpchar szLastError, int nErrors, int nCsvDataLines, cpchar szInputFileName, cpchar szMappingFileName, cpchar szTemplateFileName,
+              cpchar szOutputFileName, cpchar szProcessedFileName, cpchar szUniqueDocumentID, cpchar szErrorFileName)
+  {
+    FILE *pFile = NULL;
+    errno_t error_code;
+    char szNow[20];
+
+    if (*szFileName)
+    {
+      error_code = fopen_s(&pFile, szFileName, "a");
+      if (pFile)
+      {
+        time_t now = time(NULL);
+        struct tm *tm_info;
+        tm_info = localtime(&now);
+        strftime(szNow, 20, "%Y-%m-%d %H:%M:%S", tm_info); // e.g. "2018-12-08 12:30:00"
+
+        fprintf(pFile, "%s;%s;%s;%s;%d;%d;%s;%s;%s;%s;%s;%s;%s\n", szNow, szLogType, szConversion, szLastError, nErrors, nCsvDataLines, szInputFileName, szMappingFileName, szTemplateFileName,
+                szOutputFileName, szProcessedFileName, szUniqueDocumentID, szErrorFileName);
+
+        fclose(pFile);
       }
       else
-        nCount++;
+        printf("Cannot append to file %s (error %d)\n", szFileName, error_code);
     }
-    pChildNode = pChildNode->next;
   }
 
-  return nCount;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  int CheckLogFileHeader(cpchar szFileName)
+  {
+    FILE *pFile = NULL;
+    errno_t error_code;
 
-int GetNodeTextValue(xmlNodePtr pParentNode, cpchar pXPath, cpchar *ppszValue, CPCondition pCondition = NULL)
-{
-  int nError = 0;
+    if (!FileExists(szFileName))
+    {
+      error_code = fopen_s(&pFile, szFileName, "w");
+      if (pFile)
+      {
+        fputs("TIMESTAMP;LOG_TYPE;CONVERSION;ERROR;CONTENT_ERRORS;CSV_DATA_RECORDS;INPUT_FILE_NAME;MAPPING_FILE_NAME;TEMPLATE_FILE_NAME;OUTPUT_FILE_NAME;PROCESSED_FILE_NAME;UNIQUE_DOCUMENT_ID;ERROR_FILE_NAME\n", pFile);
+        fclose(pFile);
+        return 0;
+      }
+      sprintf(szLastError, "Cannot create log file %s (error %d)", szFileName, error_code);
+      puts(szLastError);
+      return 1;
+    }
 
-  xmlNodePtr pNode = GetNode(pParentNode, pXPath, false, NULL, pCondition);
+    return 0;
+  }
 
-  if (pNode)
-    // xmlChar *xmlNodeGetContent	(const xmlNode * cur)
-    *ppszValue = (cpchar)xmlNodeGetContent(pNode);
-  else
-    nError = 1;
+  //--------------------------------------------------------------------------------------------------------
 
-  return nError;
-}
+  int LogMappingError(int nMapIndex, cpchar szOperation, cpchar szColumnName, cpchar szError)
+  {
+    int nReturnCode = 0;
+    errno_t error_code;
 
-//--------------------------------------------------------------------------------------------------------
+    nMappingErrors++;
 
-xmlNodePtr SetNodeValue(xmlDocPtr pDoc, xmlNodePtr pParentNode, const char * pXPath, const char *pValue, FieldMapping const *pFieldMapping,
-                        AttributeNameValueList *pAttributeNameValueList = NULL, CPCondition pCondition = NULL)
-{
-  xmlNodePtr pRealParentNode = NULL;
-  xmlNodePtr pNode = NULL;
-  /*
+    if (!pMappingErrorFile)
+    {
+      // open file in write mode
+      error_code = fopen_s(&pMappingErrorFile, szMappingErrorFileName, "w");
+      if (!pMappingErrorFile)
+      {
+        printf("Cannot open file '%s' (error code %d)\n", szMappingErrorFileName, error_code);
+        return -2;
+      }
+
+      // write header of error file
+      nReturnCode = fputs("LINE;OPERATION;COLUMN_NAME;ERROR\n", pMappingErrorFile);
+    }
+
+    nReturnCode = fprintf(pMappingErrorFile, "%d;\"%s\";\"%s\";\"%s\"\n", nMapIndex + 1, szOperation, szColumnName, szError);
+
+    return nReturnCode;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int LogXmlError(int nLine, int nColumnIndex, cpchar szColumnName, cpchar szXPath, cpchar szValue, cpchar szError)
+  {
+    int nReturnCode = 0;
+    errno_t error_code;
+
+    if (nColumnIndex >= 0 && nColumnIndex < nCsvDataColumns && abColumnError[nColumnIndex])
+      return 0; // report only first error for each column
+
+    nErrors++;
+
+    if (convDir == CSV2XML && nColumnIndex >= 0 && nColumnIndex < nCsvDataColumns)
+      abColumnError[nColumnIndex] = true;
+
+    if (!pErrorFile)
+    {
+      // open file in write mode
+      error_code = fopen_s(&pErrorFile, szErrorFileName, "w");
+      if (!pErrorFile)
+      {
+        printf("Cannot open file '%s' (error code %d)\n", szErrorFileName, error_code);
+        return -2;
+      }
+
+      // write header of error file
+      nReturnCode = fputs("LINE;COLUMN_NR;COLUMN_NAME;XPATH;VALUE;ERROR\n", pErrorFile);
+    }
+
+    if (*szXPath)
+      nReturnCode = fprintf(pErrorFile, "%d;%d;\"%s\";\"%s\";\"%s\";\"%s\"\n", nLine, nColumnIndex + 1, szColumnName, szXPath, szValue, szError);
+    else
+      nReturnCode = fprintf(pErrorFile, "%d;%d;\"%s\";;\"%s\";\"%s\"\n", nLine, nColumnIndex + 1, szColumnName, szValue, szError);
+
+    return nReturnCode;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int LogCsvError(int nLine, int nColumnIndex, cpchar szColumnName, cpchar szValue, cpchar szError)
+  {
+    return LogXmlError(nLine, nColumnIndex, szColumnName, szEmptyString, szValue, szError);
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int MyLoadFile(cpchar pszFileName, char *pBuffer, int nMaxSize)
+  {
+    int nBytesRead = 0;
+    FILE *pFile = NULL;
+    errno_t error_code;
+
+    error_code = fopen_s(&pFile, pszFileName, "r");
+    if (!pFile)
+    {
+      sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, error_code);
+      puts(szLastError);
+      return -1;
+    }
+
+    // clear read buffer
+    memset(pBuffer, 0, nMaxSize);
+
+    // read content of file
+    nBytesRead = fread(pBuffer, nMaxSize - 1, 1, pFile);
+
+    // close file
+    fclose(pFile);
+
+    return nBytesRead;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int MyWriteFile(cpchar pszFileName, cpchar pszBuffer)
+  {
+    int nReturnCode = 0;
+    FILE *pFile = NULL;
+    errno_t error_code;
+
+    error_code = fopen_s(&pFile, pszFileName, "w");
+    if (!pFile)
+    {
+      sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, error_code);
+      puts(szLastError);
+      return -1;
+    }
+
+    // write content of file
+    nReturnCode = fputs(pszBuffer, pFile);
+    if (nReturnCode == EOF)
+    {
+      sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, nReturnCode);
+      puts(szLastError);
+      return -2;
+    }
+
+    // close file
+    nReturnCode = fclose(pFile);
+
+    return nReturnCode;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  bool EvaluateCondition(xmlNodePtr pNode, CPCondition pCondition)
+  {
+    bool bResult = false, bResult2;
+    cpchar pszAttributeValue;
+    int nCompareResult;
+
+    if (pCondition->pComplexCondition)
+    {
+      bResult = EvaluateCondition(pNode, &pCondition->pComplexCondition->LeftCondition);
+      bResult2 = EvaluateCondition(pNode, &pCondition->pComplexCondition->RightCondition);
+      if (pCondition->pComplexCondition->op == AND_OP)
+        bResult = bResult && bResult2;
+      if (pCondition->pComplexCondition->op == OR_OP)
+        bResult = bResult || bResult2;
+    }
+
+    if (pCondition->pSimpleCondition && *pCondition->pSimpleCondition->szLeftPart == '@')
+    {
+      pszAttributeValue = (cpchar)xmlGetProp(pNode, (const xmlChar *)pCondition->pSimpleCondition->szLeftPart + 1);
+      if (!pszAttributeValue)
+        pszAttributeValue = szEmptyString;
+
+      nCompareResult = strcmp(pszAttributeValue, pCondition->pSimpleCondition->szCurrentValue);
+
+      if (strcmp(pCondition->pSimpleCondition->szOperator, "=") == 0)
+        bResult = (nCompareResult == 0);
+      if (strcmp(pCondition->pSimpleCondition->szOperator, "!=") == 0)
+        bResult = (nCompareResult != 0);
+      if (strcmp(pCondition->pSimpleCondition->szOperator, "<") == 0)
+        bResult = (nCompareResult < 0);
+      if (strcmp(pCondition->pSimpleCondition->szOperator, "<=") == 0)
+        bResult = (nCompareResult <= 0);
+      if (strcmp(pCondition->pSimpleCondition->szOperator, ">") == 0)
+        bResult = (nCompareResult > 0);
+      if (strcmp(pCondition->pSimpleCondition->szOperator, ">=") == 0)
+        bResult = (nCompareResult >= 0);
+    }
+
+    return bResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  xmlNodePtr GetNode(xmlNodePtr pParentNode, const char *pXPath, bool bCreateIfNotFound = false, AttributeNameValueList *pAttributeNameValueList = NULL, CPCondition pCondition = NULL)
+  {
+    char szNodeName[MAX_NODE_NAME_SIZE];
+    cpchar pChildXPath = NULL;
+    cpchar pszAttributeValue = NULL;
+    cpchar pSlash = NULL;
+    char *pPos = NULL;
+    xmlNodePtr pChildNode = NULL;
+    xmlNodePtr pResult = NULL;
+    CPCondition pCleanCondition = NULL;
+    int nRequestedNodeIndex = 1;
+    int nFoundNodeIndex = 0;
+    int i;
+    bool bMatch;
+
+    // real condition ?
+    if (pCondition && (pCondition->pComplexCondition || pCondition->pSimpleCondition))
+      pCleanCondition = pCondition;
+
+    // Extract node name from xpath (first position of slash)
+    pSlash = strchr(pXPath, '/');
+    if (pSlash == NULL)
+      strcpy_s(szNodeName, MAX_NODE_NAME_SIZE, pXPath);
+    else
+    {
+      pChildXPath = pSlash + 1;
+      if (!*pChildXPath)
+        pChildXPath = NULL;
+      int len = min(pSlash - pXPath, MAX_NODE_NAME_SIZE);
+      mystrncpy(szNodeName, pXPath, len + 1);
+      //szNodeName[len] = '\0';
+    }
+
+    // Extract node index (if existing)
+    pPos = strchr(szNodeName, '[');
+    if (pPos != NULL)
+    {
+      *pPos++ = '\0';
+      nRequestedNodeIndex = atoi(pPos);
+      if (nRequestedNodeIndex < 1)
+        nRequestedNodeIndex = 1;
+      //if (nRequestedNodeIndex > MAX_NODE_INDEX)
+      //  nRequestedNodeIndex = MAX_NODE_INDEX;
+    }
+
+    // search for <szNodeName> (with requested node index) within children of pParentNode
+    pChildNode = pParentNode->children;
+
+    if (((pAttributeNameValueList && pAttributeNameValueList->nCount > 0) || pCleanCondition) && pChildXPath == NULL)
+    {
+      // search for right node with node name and conditions for attribute values
+      while (pChildNode != NULL)
+      {
+        if (strcmp((cpchar)pChildNode->name, szNodeName) == 0)
+        {
+          nFoundNodeIndex++;
+          bMatch = true;
+
+          if (pCleanCondition)
+          {
+            bMatch = EvaluateCondition(pChildNode, pCleanCondition);
+          }
+          else
+          {
+            for (i = 0; i < pAttributeNameValueList->nCount && bMatch; i++)
+            {
+              // xmlChar *xmlGetProp (const xmlNode *node, const xmlChar *name)
+              pszAttributeValue = (cpchar)xmlGetProp(pChildNode, (const xmlChar *)pAttributeNameValueList->aAttrNameValue[i].szName);
+              if (!pszAttributeValue)
+                pszAttributeValue = szEmptyString;
+              if (strcmp(pszAttributeValue, pAttributeNameValueList->aAttrNameValue[i].szValue) != 0)
+                bMatch = false;
+            }
+          }
+
+          if (bMatch)
+            return pChildNode; // node with matching attribute value found
+        }
+        pChildNode = pChildNode->next;
+      }
+    }
+    else
+    {
+      // search for right node with node name and node index
+      while (pChildNode != NULL)
+      {
+        if (strcmp((const char *)pChildNode->name, szNodeName) == 0)
+        {
+          nFoundNodeIndex++;
+          if (nFoundNodeIndex == nRequestedNodeIndex)
+          {
+            // <szNodeName> with requested node index found
+            if (pChildXPath)
+              return GetNode(pChildNode, pChildXPath, bCreateIfNotFound, pAttributeNameValueList, pCleanCondition);
+            else
+              return pChildNode;
+          }
+        }
+        pChildNode = pChildNode->next;
+      }
+    }
+
+    // <szNodeName> with requested node index or attribute value not found
+    if (nFoundNodeIndex < nRequestedNodeIndex && !bCreateIfNotFound)
+      return NULL;
+
+    if (pAttributeNameValueList && pAttributeNameValueList->nCount > 0 && pChildXPath == NULL)
+    {
+      // create <szNodeName> with requested attribute value
+      pChildNode = xmlNewChild(pParentNode, NULL, (const xmlChar *)szNodeName, NULL);
+
+      for (i = 0; i < pAttributeNameValueList->nCount; i++)
+      {
+        // xmlAttrPtr	xmlSetProp(xmlNodePtr node, const xmlChar *name, const xmlChar *value)
+        xmlSetProp(pChildNode, (const xmlChar *)pAttributeNameValueList->aAttrNameValue[i].szName, (const xmlChar *)pAttributeNameValueList->aAttrNameValue[i].szValue);
+      }
+    }
+    else
+    {
+      // create <szNodeName> with requested node index
+      while (nFoundNodeIndex < nRequestedNodeIndex)
+      {
+        pChildNode = xmlNewChild(pParentNode, NULL, (const xmlChar *)szNodeName, NULL);
+        nFoundNodeIndex++;
+      }
+    }
+
+    // end of XPath reached ?
+    if (pChildXPath)
+      pResult = GetNode(pChildNode, pChildXPath, bCreateIfNotFound, pAttributeNameValueList, pCleanCondition);
+    else
+      pResult = pChildNode;
+
+    return pResult;
+  }
+  // end of function "GetNode"
+
+  //--------------------------------------------------------------------------------------------------------
+
+  xmlNodePtr GetCreateNode(xmlNodePtr pParentNode, const char *pXPath, AttributeNameValueList *pAttributeNameValueList = NULL, CPCondition pCondition = NULL)
+  {
+    return GetNode(pParentNode, pXPath, true, pAttributeNameValueList, pCondition);
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int GetNodeCount(xmlNodePtr pParentNode, const char *pXPath)
+  {
+    char szNodeName[MAX_NODE_NAME_SIZE];
+    const char *pChildXPath = NULL;
+    const char *pSlash = NULL;
+    char *pPos = NULL;
+    xmlNodePtr pChildNode = NULL;
+    int nRequestedNodeIndex = 1;
+    int nFoundNodeIndex = 0;
+    int nCount = 0;
+
+    // Extract node name from xpath (first position of slash)
+    pSlash = strchr(pXPath, '/');
+    if (pSlash == NULL)
+      strcpy_s(szNodeName, MAX_NODE_NAME_SIZE, pXPath);
+    else
+    {
+      pChildXPath = pSlash + 1;
+      if (!*pChildXPath)
+        pChildXPath = NULL;
+      int len = min(pSlash - pXPath, MAX_NODE_NAME_SIZE);
+      mystrncpy(szNodeName, pXPath, len + 1);
+      //szNodeName[len] = '\0';
+    }
+
+    // Extract node index (if existing)
+    pPos = strchr(szNodeName, '[');
+    if (pPos != NULL)
+    {
+      *pPos++ = '\0';
+      nRequestedNodeIndex = atoi(pPos);
+      if (nRequestedNodeIndex < 1)
+        nRequestedNodeIndex = 1;
+      //if (nRequestedNodeIndex > MAX_NODE_INDEX)
+      //  nRequestedNodeIndex = MAX_NODE_INDEX;
+    }
+    // end of xpath reached ?
+    if (!pChildXPath)
+      nRequestedNodeIndex = -1;
+
+    // search for <szNodeName> within children of pParentNode
+    pChildNode = pParentNode->children;
+
+    while (pChildNode != NULL)
+    {
+      if (strcmp((const char *)pChildNode->name, szNodeName) == 0)
+      {
+        if (pChildXPath)
+        {
+          nFoundNodeIndex++;
+          if (nFoundNodeIndex == nRequestedNodeIndex)
+            // <szNodeName> with requested node index found
+            return GetNodeCount(pChildNode, pChildXPath);
+        }
+        else
+          nCount++;
+      }
+      pChildNode = pChildNode->next;
+    }
+
+    return nCount;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int GetNodeTextValue(xmlNodePtr pParentNode, cpchar pXPath, cpchar *ppszValue, CPCondition pCondition = NULL)
+  {
+    int nError = 0;
+
+    xmlNodePtr pNode = GetNode(pParentNode, pXPath, false, NULL, pCondition);
+
+    if (pNode)
+      // xmlChar *xmlNodeGetContent	(const xmlNode * cur)
+      *ppszValue = (cpchar)xmlNodeGetContent(pNode);
+    else
+      nError = 1;
+
+    return nError;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  xmlNodePtr SetNodeValue(xmlDocPtr pDoc, xmlNodePtr pParentNode, const char *pXPath, const char *pValue, FieldMapping const *pFieldMapping,
+                          AttributeNameValueList *pAttributeNameValueList = NULL, CPCondition pCondition = NULL)
+  {
+    xmlNodePtr pRealParentNode = NULL;
+    xmlNodePtr pNode = NULL;
+    /*
   documentation: http://xmlsoft.org/html/libxml-tree.html
 	// xmlNewProp() creates attributes, which is "attached" to an node. It returns xmlAttrPtr, which isn't used here.
 	node = xmlNewChild(root_node, NULL, BAD_CAST "node3", BAD_CAST "this node has attributes");
 	xmlNewProp(node, BAD_CAST "attribute", BAD_CAST "yes");
   */
 
-  if (*pValue || pFieldMapping->xml.bMandatory /*|| pFieldMapping->xml.bAddEmptyNodes*/)
-  {
-    if (pParentNode)
-      pRealParentNode = pParentNode;
-    else
-      pParentNode = xmlDocGetRootElement(pDoc);
+    if (*pValue || pFieldMapping->xml.bMandatory /*|| pFieldMapping->xml.bAddEmptyNodes*/)
+    {
+      if (pParentNode)
+        pRealParentNode = pParentNode;
+      else
+        pParentNode = xmlDocGetRootElement(pDoc);
 
-    xmlNodePtr pNode = GetCreateNode(pParentNode, pXPath, pAttributeNameValueList, pCondition);
-    //xmlNodePtr pNode = GetCreateNode(pParentNode, pXPath, pszConditionAttributeName, pszConditionAttributeValue);
+      xmlNodePtr pNode = GetCreateNode(pParentNode, pXPath, pAttributeNameValueList, pCondition);
+      //xmlNodePtr pNode = GetCreateNode(pParentNode, pXPath, pszConditionAttributeName, pszConditionAttributeValue);
 
-    if (strlen(pFieldMapping->xml.szAttribute) == 0) {
-      if (*pValue)
-        xmlNodeSetContent(pNode, xmlEncodeSpecialChars(pDoc, (const xmlChar *)pValue));
-    }
-    else {
-      // xmlChar *xmlGetProp (const xmlNode *node, const xmlChar *name)
-      // xmlAttrPtr	xmlSetProp(xmlNodePtr node, const xmlChar *name, const xmlChar *value)
-      xmlSetProp(pNode, (const xmlChar *)pFieldMapping->xml.szAttribute, xmlEncodeSpecialChars(pDoc, (const xmlChar *)pValue));
-      //xmlNewProp(pNode, (const xmlChar *)pFieldMapping->xml.szAttribute, xmlEncodeSpecialChars(pDoc, (const xmlChar *)pValue));
-    }
-  }
-
-  return pNode;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-#define POSSIBLE_COLUMN_DELIMITERS  11
-const char szPossibleColumnDelimiters[POSSIBLE_COLUMN_DELIMITERS+1] = ",;:\t|/^!%$#";
-
-char GetColumnDelimiter(cpchar szLine)
-{
-  int i, nResultIndex, nResultCount, anDelimiters[POSSIBLE_COLUMN_DELIMITERS];
-  cpchar pPos, pTemp;
-
-  // initialize occurrence counts of possible column delimiters
-  for (i = 0; i < POSSIBLE_COLUMN_DELIMITERS; i++)
-    anDelimiters[i] = 0;
-
-  // count occurrences of possible column delimiters
-  for (pPos = szLine; *pPos; pPos++) {
-    pTemp = strchr(szPossibleColumnDelimiters, *pPos);
-    if (pTemp) {
-      i = pTemp - szPossibleColumnDelimiters;
-      if (i >= 0 && i < POSSIBLE_COLUMN_DELIMITERS)
-        anDelimiters[i]++;
-    }
-  }
-
-  // find column delimiter with maximum occurence count
-  nResultIndex = 0;
-  nResultCount = anDelimiters[nResultIndex];
-
-  for (i = 1; i < POSSIBLE_COLUMN_DELIMITERS; i++)
-    if (anDelimiters[i] > nResultCount) {
-      nResultIndex = i;
-      nResultCount = anDelimiters[nResultIndex];
-    }
-
-  return szPossibleColumnDelimiters[nResultIndex];
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void CopyIgnoreString(pchar pszDest, cpchar pszSource, cpchar pszIgnoreChars)
-{
-  // copy source string to destination buffer skipping specified list of characters
-  cpchar pSource = pszSource;
-  pchar pDest = pszDest;
-
-  while (*pSource) {
-    if (!strchr(pszIgnoreChars, *pSource))
-      *pDest++ = *pSource;
-    pSource++;
-  }
-
-  *pDest = '\0';
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool ValidChars(cpchar pszString, cpchar pszValidChars)
-{
-  for (cpchar p = pszString; *p; p++)
-    if (!strchr(pszValidChars, *p))
-      return false;
-
-  return true;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool IsValidNumber(cpchar pszString, char cDecimalPoint)
-{
-  cpchar pszTest = pszString;
-  char szValidChars[32];
-  bool bResult;
-
-  // empty string ?
-  if (!*pszTest)
-    return false;
-
-  // number with plus or minus sign at the beginning ?
-  if (strchr("+-", *pszTest))
-    pszTest++;
-
-  // check valid characters (digits plus decimal point)
-  sprintf(szValidChars, "%s%c", szDigits, cDecimalPoint);
-  bResult = ValidChars(pszTest, szValidChars);
-
-  return bResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool CheckRegex(cpchar pszString, cpchar pszRegex)
-{
-  // Sample regular expressions:
-  // Pattern with brackets: "[A-Z]{3}", "[0-9a-zA-Z]{18}[0-9]{2}"
-  // Pattern with dots: "..[B-C]."
-  // Enumeration: "(AIF,UCITS)"
-  cpchar pStrPos = pszString;
-  cpchar pRegexPos = pszRegex;
-  //cpchar pElemEnd = NULL;
-  char szValidChars[256] = "";
-  char szSearch[MAX_VALUE_SIZE+2];
-  bool bResult = true;  // default
-  bool bMatch;
-
-  if (pszRegex == NULL)
-    return bResult;
-
-  if (*pszRegex == ',' /*was originally '(', but already changed during loading of mapping file*/) {
-    // Definition of allowed strings (xml enumeration)
-    if (strlen(pszString) > MAX_VALUE_SIZE)
-      bResult = false;
-    else {
-      sprintf(szSearch, ",%s,", pszString);
-      // Example: searching for ",UCITS," in ",AIF,UCITS,"
-      bResult = (strstr(pszRegex, szSearch) != NULL);
-    }
-  }
-  else
-  if (strstr(pszRegex, ".[") != NULL || strstr(pszRegex, "].") != NULL) {
-    // Samples for patterns with dots: "..[A]." or "..[B-C]."
-    while (*pRegexPos && *pStrPos && bResult) {
-      if (*pRegexPos == '[') {
-        bMatch = false;
-        pRegexPos++;  // skip '['
-        while (*pRegexPos && *pRegexPos != ']' && !bMatch) {
-          if (pRegexPos[1] == '-' && pRegexPos[2]) {
-            bMatch = (*pStrPos >= *pRegexPos && *pStrPos <= pRegexPos[2]);
-            pRegexPos += 3;
-          }
-          else {
-            bMatch = (*pStrPos == *pRegexPos);
-            pRegexPos++;
-          }
-        }
-        while (*pRegexPos && *pRegexPos != ']')
-          pRegexPos++;
-        if (*pRegexPos != ']')
-          bMatch = false; // error in regular expression (closing bracket missing)
-        bResult = bMatch;
+      if (strlen(pFieldMapping->xml.szAttribute) == 0)
+      {
+        if (*pValue)
+          xmlNodeSetContent(pNode, xmlEncodeSpecialChars(pDoc, (const xmlChar *)pValue));
       }
       else
-        bResult = (*pRegexPos == '.');
-      pRegexPos++;
-      pStrPos++;
+      {
+        // xmlChar *xmlGetProp (const xmlNode *node, const xmlChar *name)
+        // xmlAttrPtr	xmlSetProp(xmlNodePtr node, const xmlChar *name, const xmlChar *value)
+        xmlSetProp(pNode, (const xmlChar *)pFieldMapping->xml.szAttribute, xmlEncodeSpecialChars(pDoc, (const xmlChar *)pValue));
+        //xmlNewProp(pNode, (const xmlChar *)pFieldMapping->xml.szAttribute, xmlEncodeSpecialChars(pDoc, (const xmlChar *)pValue));
+      }
     }
-  }
-  else
-  if (*pszRegex == '[') {
-    // Definition of allowed pattern with allowed characters
-    if (strncmp(pszRegex, "[0-9]", 5) == 0) strcpy(szValidChars, szDigits);
-    if (strncmp(pszRegex, "[a-z]", 5) == 0) strcpy(szValidChars, szSmallLetters);
-    if (strncmp(pszRegex, "[A-Z]", 5) == 0) strcpy(szValidChars, szBigLetters);
-    if (strncmp(pszRegex, "[0-9A-Z]", 8) == 0) sprintf(szValidChars, "%s%s", szDigits, szBigLetters);
-    if (strncmp(pszRegex, "[a-zA-Z]", 8) == 0) sprintf(szValidChars, "%s%s", szSmallLetters, szBigLetters);
-    if (strncmp(pszRegex, "[0-9a-zA-Z]", 11) == 0) sprintf(szValidChars, "%s%s%s", szDigits, szSmallLetters, szBigLetters);
 
-    if (*szValidChars)
-      bResult = ValidChars(pszString, szValidChars);
+    return pNode;
   }
 
-  return bResult;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+#define POSSIBLE_COLUMN_DELIMITERS 11
+  const char szPossibleColumnDelimiters[POSSIBLE_COLUMN_DELIMITERS + 1] = ",;:\t|/^!%$#";
 
-bool IsValidText(cpchar pszString, CPFieldMapping pFieldMapping)
-{
-  bool bResult = true;
+  char GetColumnDelimiter(cpchar szLine)
+  {
+    int i, nResultIndex, nResultCount, anDelimiters[POSSIBLE_COLUMN_DELIMITERS];
+    cpchar pPos, pTemp;
 
-  if (!*pszString && !pFieldMapping->csv.bMandatory)
-    return true;  // empty string allowed for optional fields
+    // initialize occurrence counts of possible column delimiters
+    for (i = 0; i < POSSIBLE_COLUMN_DELIMITERS; i++)
+      anDelimiters[i] = 0;
 
-  if (!*pszString && pFieldMapping->csv.bMandatory)
-    return false;  // empty string not allowed for mandatory fields
-
-  if (pFieldMapping->csv.nMaxLen > 0 && (int)strlen(pszString) > pFieldMapping->csv.nMaxLen)
-    return false;  // string is too long
-
-  if (pFieldMapping->csv.nMinLen > 0 && (int)strlen(pszString) < pFieldMapping->csv.nMinLen)
-    return false;  // string is too short
-
-  if (*pFieldMapping->csv.szFormat)
-    bResult = CheckRegex(pszString, pFieldMapping->csv.szFormat);
-
-  return bResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int MapIntFormat(cpchar pszSourceValue, cpchar pszSourceFormat, pchar pszDestValue, cpchar pszDestFormat, int nMaxLen)
-{
-  int nErrorCode = 0;
-  cpchar pSourceValue = pszSourceValue;
-  pchar pDestValue = pszDestValue;
-
-  if ((int)strlen(pszSourceValue) > nMaxLen)
-    return -1;  // destination value buffer is too small
- 
-  if (*pSourceValue == '+')
-    pSourceValue++;  // remove plus sign at the start
-
-  CopyIgnoreString(pszDestValue, pSourceValue, " ");
-
-  if (*pDestValue == '-')
-    pDestValue++;  // skip minus sign at the start
-
-  if (strlen(pDestValue) > MAX_DIGITS) {
-    sprintf(szLastFieldMappingError, "Number too long (maximum digits %d)", MAX_DIGITS);
-    return 2;
-  }
-  if (!ValidChars(pDestValue, szDigits)) {
-    strcpy(szLastFieldMappingError, "Invalid number (invalid characters found)");
-    return 3;
-  }
-
-  return nErrorCode;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int MapNumberFormat(cpchar pszSourceValue, char cSourceDecimalPoint, cpchar pszSourceFormat, pchar pszDestValue, char cDestDecimalPoint, cpchar pszDestFormat, int nMaxLen)
-{
-  int nErrorCode = 0;
-  char szIgnoreChars[3];
-  cpchar pSourceValue = pszSourceValue;
-  pchar pDestValue = pszDestValue;
-  char *pPos = NULL;
-
-  if ((int)strlen(pszSourceValue) > nMaxLen)
-    return -1;  // destination value buffer is too small
- 
-  if (*pSourceValue == '+')
-    pSourceValue++;  // ignore plus sign at the start
-
-  if (convDir == CSV2XML) {
-    // copy source number to destination buffer without 1000-delimiters
-    strcpy(szIgnoreChars, (cSourceDecimalPoint == '.') ? ", " : ". ");
-    CopyIgnoreString(pszDestValue, pSourceValue, szIgnoreChars);
-  }
-  else
-    strcpy(pszDestValue, pSourceValue);
-
-  // check number format
-  if (*pDestValue == '-')
-    pDestValue++;  // skip minus sign at the start
-
-  pPos = strchr(pszDestValue, cSourceDecimalPoint);
-  if (pPos) {
-    // check integer part of number (before comma/dot)
-    *pPos = '\0';
-    if (strlen(pDestValue) > MAX_DIGITS) {
-      sprintf(szLastFieldMappingError, "Number too long (maximum digits %d before decimal point)", MAX_DIGITS);
-      return 2;
+    // count occurrences of possible column delimiters
+    for (pPos = szLine; *pPos; pPos++)
+    {
+      pTemp = strchr(szPossibleColumnDelimiters, *pPos);
+      if (pTemp)
+      {
+        i = pTemp - szPossibleColumnDelimiters;
+        if (i >= 0 && i < POSSIBLE_COLUMN_DELIMITERS)
+          anDelimiters[i]++;
+      }
     }
-    if (!ValidChars(pDestValue, szDigits)) {
-      sprintf(szLastFieldMappingError, "Invalid number (invalid characters found, decimal point is '%c')", cSourceDecimalPoint);
-      return 3;
-    }
-    // change decimal character to destination format
-    *pPos++ = cDestDecimalPoint;
-    // check fraction part of number (behind comma/dot)
-    pDestValue = pPos;
-    if (strlen(pDestValue) > MAX_DIGITS) {
-      sprintf(szLastFieldMappingError, "Number too long (maximum digits %d after decimal point)", MAX_DIGITS);
-      return 2;
-    }
-    if (!ValidChars(pDestValue, szDigits)) {
-      sprintf(szLastFieldMappingError, "Invalid number (invalid characters found, decimal point is '%c')", cSourceDecimalPoint);
-      return 3;
-    }
+
+    // find column delimiter with maximum occurence count
+    nResultIndex = 0;
+    nResultCount = anDelimiters[nResultIndex];
+
+    for (i = 1; i < POSSIBLE_COLUMN_DELIMITERS; i++)
+      if (anDelimiters[i] > nResultCount)
+      {
+        nResultIndex = i;
+        nResultCount = anDelimiters[nResultIndex];
+      }
+
+    return szPossibleColumnDelimiters[nResultIndex];
   }
-  else {
-    // check integer number
-    if (strlen(pDestValue) > MAX_DIGITS) {
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void CopyIgnoreString(pchar pszDest, cpchar pszSource, cpchar pszIgnoreChars)
+  {
+    // copy source string to destination buffer skipping specified list of characters
+    cpchar pSource = pszSource;
+    pchar pDest = pszDest;
+
+    while (*pSource)
+    {
+      if (!strchr(pszIgnoreChars, *pSource))
+        *pDest++ = *pSource;
+      pSource++;
+    }
+
+    *pDest = '\0';
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  bool ValidChars(cpchar pszString, cpchar pszValidChars)
+  {
+    for (cpchar p = pszString; *p; p++)
+      if (!strchr(pszValidChars, *p))
+        return false;
+
+    return true;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  bool IsValidNumber(cpchar pszString, char cDecimalPoint)
+  {
+    cpchar pszTest = pszString;
+    char szValidChars[32];
+    bool bResult;
+
+    // empty string ?
+    if (!*pszTest)
+      return false;
+
+    // number with plus or minus sign at the beginning ?
+    if (strchr("+-", *pszTest))
+      pszTest++;
+
+    // check valid characters (digits plus decimal point)
+    sprintf(szValidChars, "%s%c", szDigits, cDecimalPoint);
+    bResult = ValidChars(pszTest, szValidChars);
+
+    return bResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  bool CheckRegex(cpchar pszString, cpchar pszRegex)
+  {
+    // Sample regular expressions:
+    // Pattern with brackets: "[A-Z]{3}", "[0-9a-zA-Z]{18}[0-9]{2}"
+    // Pattern with dots: "..[B-C]."
+    // Enumeration: "(AIF,UCITS)"
+    cpchar pStrPos = pszString;
+    cpchar pRegexPos = pszRegex;
+    //cpchar pElemEnd = NULL;
+    char szValidChars[256] = "";
+    char szSearch[MAX_VALUE_SIZE + 2];
+    bool bResult = true; // default
+    bool bMatch;
+
+    if (pszRegex == NULL)
+      return bResult;
+
+    if (*pszRegex == ',' /*was originally '(', but already changed during loading of mapping file*/)
+    {
+      // Definition of allowed strings (xml enumeration)
+      if (strlen(pszString) > MAX_VALUE_SIZE)
+        bResult = false;
+      else
+      {
+        sprintf(szSearch, ",%s,", pszString);
+        // Example: searching for ",UCITS," in ",AIF,UCITS,"
+        bResult = (strstr(pszRegex, szSearch) != NULL);
+      }
+    }
+    else if (strstr(pszRegex, ".[") != NULL || strstr(pszRegex, "].") != NULL)
+    {
+      // Samples for patterns with dots: "..[A]." or "..[B-C]."
+      while (*pRegexPos && *pStrPos && bResult)
+      {
+        if (*pRegexPos == '[')
+        {
+          bMatch = false;
+          pRegexPos++; // skip '['
+          while (*pRegexPos && *pRegexPos != ']' && !bMatch)
+          {
+            if (pRegexPos[1] == '-' && pRegexPos[2])
+            {
+              bMatch = (*pStrPos >= *pRegexPos && *pStrPos <= pRegexPos[2]);
+              pRegexPos += 3;
+            }
+            else
+            {
+              bMatch = (*pStrPos == *pRegexPos);
+              pRegexPos++;
+            }
+          }
+          while (*pRegexPos && *pRegexPos != ']')
+            pRegexPos++;
+          if (*pRegexPos != ']')
+            bMatch = false; // error in regular expression (closing bracket missing)
+          bResult = bMatch;
+        }
+        else
+          bResult = (*pRegexPos == '.');
+        pRegexPos++;
+        pStrPos++;
+      }
+    }
+    else if (*pszRegex == '[')
+    {
+      // Definition of allowed pattern with allowed characters
+      if (strncmp(pszRegex, "[0-9]", 5) == 0)
+        strcpy(szValidChars, szDigits);
+      if (strncmp(pszRegex, "[a-z]", 5) == 0)
+        strcpy(szValidChars, szSmallLetters);
+      if (strncmp(pszRegex, "[A-Z]", 5) == 0)
+        strcpy(szValidChars, szBigLetters);
+      if (strncmp(pszRegex, "[0-9A-Z]", 8) == 0)
+        sprintf(szValidChars, "%s%s", szDigits, szBigLetters);
+      if (strncmp(pszRegex, "[a-zA-Z]", 8) == 0)
+        sprintf(szValidChars, "%s%s", szSmallLetters, szBigLetters);
+      if (strncmp(pszRegex, "[0-9a-zA-Z]", 11) == 0)
+        sprintf(szValidChars, "%s%s%s", szDigits, szSmallLetters, szBigLetters);
+
+      if (*szValidChars)
+        bResult = ValidChars(pszString, szValidChars);
+    }
+
+    return bResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  bool IsValidText(cpchar pszString, CPFieldMapping pFieldMapping)
+  {
+    bool bResult = true;
+
+    if (!*pszString && !pFieldMapping->csv.bMandatory)
+      return true; // empty string allowed for optional fields
+
+    if (!*pszString && pFieldMapping->csv.bMandatory)
+      return false; // empty string not allowed for mandatory fields
+
+    if (pFieldMapping->csv.nMaxLen > 0 && (int)strlen(pszString) > pFieldMapping->csv.nMaxLen)
+      return false; // string is too long
+
+    if (pFieldMapping->csv.nMinLen > 0 && (int)strlen(pszString) < pFieldMapping->csv.nMinLen)
+      return false; // string is too short
+
+    if (*pFieldMapping->csv.szFormat)
+      bResult = CheckRegex(pszString, pFieldMapping->csv.szFormat);
+
+    return bResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int MapIntFormat(cpchar pszSourceValue, cpchar pszSourceFormat, pchar pszDestValue, cpchar pszDestFormat, int nMaxLen)
+  {
+    int nErrorCode = 0;
+    cpchar pSourceValue = pszSourceValue;
+    pchar pDestValue = pszDestValue;
+
+    if ((int)strlen(pszSourceValue) > nMaxLen)
+      return -1; // destination value buffer is too small
+
+    if (*pSourceValue == '+')
+      pSourceValue++; // remove plus sign at the start
+
+    CopyIgnoreString(pszDestValue, pSourceValue, " ");
+
+    if (*pDestValue == '-')
+      pDestValue++; // skip minus sign at the start
+
+    if (strlen(pDestValue) > MAX_DIGITS)
+    {
       sprintf(szLastFieldMappingError, "Number too long (maximum digits %d)", MAX_DIGITS);
       return 2;
     }
-    if (!ValidChars(pDestValue, szDigits)) {
-      sprintf(szLastFieldMappingError, "Invalid number (invalid characters found, decimal point is '%c')", cSourceDecimalPoint);
+    if (!ValidChars(pDestValue, szDigits))
+    {
+      strcpy(szLastFieldMappingError, "Invalid number (invalid characters found)");
       return 3;
     }
+
+    return nErrorCode;
   }
 
-  return nErrorCode;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  int MapNumberFormat(cpchar pszSourceValue, char cSourceDecimalPoint, cpchar pszSourceFormat, pchar pszDestValue, char cDestDecimalPoint, cpchar pszDestFormat, int nMaxLen)
+  {
+    int nErrorCode = 0;
+    char szIgnoreChars[3];
+    cpchar pSourceValue = pszSourceValue;
+    pchar pDestValue = pszDestValue;
+    char *pPos = NULL;
 
-int MapDateFormat(cpchar pszSourceValue, cpchar pszSourceFormat, pchar pszDestValue, cpchar pszDestFormat)
-{
-  int nErrorCode = 0;
-  int nDay = 1;
-  int nMonth = 1;
-  int nYear = 2000;
-  cpchar pPos = NULL;
-  char szDay[3];
-  char szMonth[3];
-  char szYear[5];
+    if ((int)strlen(pszSourceValue) > nMaxLen)
+      return -1; // destination value buffer is too small
 
-  if (strlen(pszSourceValue) != strlen(pszSourceFormat))
-    return 1;
+    if (*pSourceValue == '+')
+      pSourceValue++; // ignore plus sign at the start
 
-  // parse source date
-  pPos = strstr(pszSourceFormat, "DD");
-  if (pPos) {
-    memcpy(szDay, pszSourceValue + (pPos - pszSourceFormat), 2);
-    szDay[2] = '\0';
-    nDay = atoi(szDay);
-    if (nDay < 1) { nDay = 1; nErrorCode = 2; }
-    if (nDay > 31) { nDay = 31; nErrorCode = 2; }
-  }
-
-  pPos = strstr(pszSourceFormat, "MM");
-  if (pPos) {
-    memcpy(szMonth, pszSourceValue + (pPos - pszSourceFormat), 2);
-    szMonth[2] = '\0';
-    nMonth = atoi(szMonth);
-    if (nMonth < 1) { nMonth = 1; nErrorCode = 2; }
-    if (nMonth > 12) { nMonth = 12; nErrorCode = 2; }
-  }
-
-  pPos = strstr(pszSourceFormat, "YYYY");
-  if (pPos) {
-    memcpy(szYear, pszSourceValue + (pPos - pszSourceFormat), 4);
-    szYear[4] = '\0';
-    nYear = atoi(szYear);
-    if (nYear < 1900) { nYear = 1900; nErrorCode = 2; }
-    if (nYear > 2150) { nYear = 2150; nErrorCode = 2; }
-  }
-  else {
-    pPos = strstr(pszSourceFormat, "YY");
-    if (pPos) {
-      memcpy(szYear, pszSourceValue + (pPos - pszSourceFormat), 2);
-      szYear[2] = '\0';
-      nYear = 2000 + atoi(szYear);
+    if (convDir == CSV2XML)
+    {
+      // copy source number to destination buffer without 1000-delimiters
+      strcpy(szIgnoreChars, (cSourceDecimalPoint == '.') ? ", " : ". ");
+      CopyIgnoreString(pszDestValue, pSourceValue, szIgnoreChars);
     }
+    else
+      strcpy(pszDestValue, pSourceValue);
+
+    // check number format
+    if (*pDestValue == '-')
+      pDestValue++; // skip minus sign at the start
+
+    pPos = strchr(pszDestValue, cSourceDecimalPoint);
+    if (pPos)
+    {
+      // check integer part of number (before comma/dot)
+      *pPos = '\0';
+      if (strlen(pDestValue) > MAX_DIGITS)
+      {
+        sprintf(szLastFieldMappingError, "Number too long (maximum digits %d before decimal point)", MAX_DIGITS);
+        return 2;
+      }
+      if (!ValidChars(pDestValue, szDigits))
+      {
+        sprintf(szLastFieldMappingError, "Invalid number (invalid characters found, decimal point is '%c')", cSourceDecimalPoint);
+        return 3;
+      }
+      // change decimal character to destination format
+      *pPos++ = cDestDecimalPoint;
+      // check fraction part of number (behind comma/dot)
+      pDestValue = pPos;
+      if (strlen(pDestValue) > MAX_DIGITS)
+      {
+        sprintf(szLastFieldMappingError, "Number too long (maximum digits %d after decimal point)", MAX_DIGITS);
+        return 2;
+      }
+      if (!ValidChars(pDestValue, szDigits))
+      {
+        sprintf(szLastFieldMappingError, "Invalid number (invalid characters found, decimal point is '%c')", cSourceDecimalPoint);
+        return 3;
+      }
+    }
+    else
+    {
+      // check integer number
+      if (strlen(pDestValue) > MAX_DIGITS)
+      {
+        sprintf(szLastFieldMappingError, "Number too long (maximum digits %d)", MAX_DIGITS);
+        return 2;
+      }
+      if (!ValidChars(pDestValue, szDigits))
+      {
+        sprintf(szLastFieldMappingError, "Invalid number (invalid characters found, decimal point is '%c')", cSourceDecimalPoint);
+        return 3;
+      }
+    }
+
+    return nErrorCode;
   }
 
-  // check delimiters
-  for (int i = strlen(pszSourceFormat) - 1; i >= 0; i--)
-    if (!strchr("DMY", pszSourceFormat[i]) && pszSourceFormat[i] != pszSourceValue[i])
-      nErrorCode = 2;  // Invalid delimiter found
+  //--------------------------------------------------------------------------------------------------------
 
-  // build result date
-  strcpy(pszDestValue, pszDestFormat);
+  int MapDateFormat(cpchar pszSourceValue, cpchar pszSourceFormat, pchar pszDestValue, cpchar pszDestFormat)
+  {
+    int nErrorCode = 0;
+    int nDay = 1;
+    int nMonth = 1;
+    int nYear = 2000;
+    cpchar pPos = NULL;
+    char szDay[3];
+    char szMonth[3];
+    char szYear[5];
 
-  pPos = strstr(pszDestFormat, "DD");
-  if (pPos) {
-    sprintf(szDay, "%02d", nDay);
-    memcpy(pszDestValue + (pPos - pszDestFormat), szDay, 2);
-  }
+    if (strlen(pszSourceValue) != strlen(pszSourceFormat))
+      return 1;
 
-  pPos = strstr(pszDestFormat, "MM");
-  if (pPos) {
-    sprintf(szMonth, "%02d", nMonth);
-    memcpy(pszDestValue + (pPos - pszDestFormat), szMonth, 2);
-  }
+    // parse source date
+    pPos = strstr(pszSourceFormat, "DD");
+    if (pPos)
+    {
+      memcpy(szDay, pszSourceValue + (pPos - pszSourceFormat), 2);
+      szDay[2] = '\0';
+      nDay = atoi(szDay);
+      if (nDay < 1)
+      {
+        nDay = 1;
+        nErrorCode = 2;
+      }
+      if (nDay > 31)
+      {
+        nDay = 31;
+        nErrorCode = 2;
+      }
+    }
 
-  pPos = strstr(pszDestFormat, "YYYY");
-  if (pPos) {
-    sprintf(szYear, "%04d", nYear);
-    memcpy(pszDestValue + (pPos - pszDestFormat), szYear, 4);
-  }
-  else {
-    pPos = strstr(pszDestFormat, "YY");
-    if (pPos) {
+    pPos = strstr(pszSourceFormat, "MM");
+    if (pPos)
+    {
+      memcpy(szMonth, pszSourceValue + (pPos - pszSourceFormat), 2);
+      szMonth[2] = '\0';
+      nMonth = atoi(szMonth);
+      if (nMonth < 1)
+      {
+        nMonth = 1;
+        nErrorCode = 2;
+      }
+      if (nMonth > 12)
+      {
+        nMonth = 12;
+        nErrorCode = 2;
+      }
+    }
+
+    pPos = strstr(pszSourceFormat, "YYYY");
+    if (pPos)
+    {
+      memcpy(szYear, pszSourceValue + (pPos - pszSourceFormat), 4);
+      szYear[4] = '\0';
+      nYear = atoi(szYear);
+      if (nYear < 1900)
+      {
+        nYear = 1900;
+        nErrorCode = 2;
+      }
+      if (nYear > 2150)
+      {
+        nYear = 2150;
+        nErrorCode = 2;
+      }
+    }
+    else
+    {
+      pPos = strstr(pszSourceFormat, "YY");
+      if (pPos)
+      {
+        memcpy(szYear, pszSourceValue + (pPos - pszSourceFormat), 2);
+        szYear[2] = '\0';
+        nYear = 2000 + atoi(szYear);
+      }
+    }
+
+    // check delimiters
+    for (int i = strlen(pszSourceFormat) - 1; i >= 0; i--)
+      if (!strchr("DMY", pszSourceFormat[i]) && pszSourceFormat[i] != pszSourceValue[i])
+        nErrorCode = 2; // Invalid delimiter found
+
+    // build result date
+    strcpy(pszDestValue, pszDestFormat);
+
+    pPos = strstr(pszDestFormat, "DD");
+    if (pPos)
+    {
+      sprintf(szDay, "%02d", nDay);
+      memcpy(pszDestValue + (pPos - pszDestFormat), szDay, 2);
+    }
+
+    pPos = strstr(pszDestFormat, "MM");
+    if (pPos)
+    {
+      sprintf(szMonth, "%02d", nMonth);
+      memcpy(pszDestValue + (pPos - pszDestFormat), szMonth, 2);
+    }
+
+    pPos = strstr(pszDestFormat, "YYYY");
+    if (pPos)
+    {
       sprintf(szYear, "%04d", nYear);
-      memcpy(pszDestValue + (pPos - pszDestFormat), szYear + 2, 2);
-    }
-  }
-
-  return nErrorCode;
-}
-// end of function "MapDateFormat"
-
-//--------------------------------------------------------------------------------------------------------
-
-int MapTextFormat(cpchar pszSourceValue, CPFieldDefinition pSourceFieldDef, pchar pszDestValue, CPFieldDefinition pDestFieldDef, int nMaxLen)
-{
-  char szShortFormat[MAX_FORMAT_ERROR_SIZE+4];
-  int nLen = (int)strlen(pszSourceValue);
-  int nErrorCode = 0;
-
-  *szLastFieldMappingError = '\0';
-  *pszDestValue = '\0';
-
-  //if (strcmp(pDestFieldDef->szContent, "CCY") == 0)
-  //  nErrorCode = 0;  // for debugging purposes only!
-
-  if (!*pszSourceValue && !pSourceFieldDef->bMandatory)
-    return 0;  // empty value is allowed for optional fields
-
-  if (nLen > nMaxLen)
-    return -1;  // destination value buffer is too small
-
-  if (nLen < pSourceFieldDef->nMinLen) {
-    sprintf(szLastFieldMappingError, "Content too short (minimum length %d)", pSourceFieldDef->nMinLen);
-    return 1;
-  }
-
-  if (pSourceFieldDef->nMaxLen >= 0 && nLen > pSourceFieldDef->nMaxLen) {
-    sprintf(szLastFieldMappingError, "Content too long (maximum length %d)", pSourceFieldDef->nMaxLen);
-    return 2;
-  }
-
-  if (!CheckRegex(pszSourceValue, pSourceFieldDef->szFormat)) {
-    // source string does not match regular expression
-    int nLen2 = strlen(pSourceFieldDef->szFormat);
-    if (nLen2 > MAX_FORMAT_ERROR_LEN) {
-      nLen2 = MAX_FORMAT_ERROR_LEN;
-      mystrncpy(szShortFormat, pSourceFieldDef->szFormat, nLen2 + 1);
-      strcpy(szShortFormat + nLen2, " ...");
+      memcpy(pszDestValue + (pPos - pszDestFormat), szYear, 4);
     }
     else
-      strcpy(szShortFormat, pSourceFieldDef->szFormat);
+    {
+      pPos = strstr(pszDestFormat, "YY");
+      if (pPos)
+      {
+        sprintf(szYear, "%04d", nYear);
+        memcpy(pszDestValue + (pPos - pszDestFormat), szYear + 2, 2);
+      }
+    }
 
-    if (*szShortFormat == ',') {
+    return nErrorCode;
+  }
+  // end of function "MapDateFormat"
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int MapTextFormat(cpchar pszSourceValue, CPFieldDefinition pSourceFieldDef, pchar pszDestValue, CPFieldDefinition pDestFieldDef, int nMaxLen)
+  {
+    char szShortFormat[MAX_FORMAT_ERROR_SIZE + 4];
+    int nLen = (int)strlen(pszSourceValue);
+    int nErrorCode = 0;
+
+    *szLastFieldMappingError = '\0';
+    *pszDestValue = '\0';
+
+    //if (strcmp(pDestFieldDef->szContent, "CCY") == 0)
+    //  nErrorCode = 0;  // for debugging purposes only!
+
+    if (!*pszSourceValue && !pSourceFieldDef->bMandatory)
+      return 0; // empty value is allowed for optional fields
+
+    if (nLen > nMaxLen)
+      return -1; // destination value buffer is too small
+
+    if (nLen < pSourceFieldDef->nMinLen)
+    {
+      sprintf(szLastFieldMappingError, "Content too short (minimum length %d)", pSourceFieldDef->nMinLen);
+      return 1;
+    }
+
+    if (pSourceFieldDef->nMaxLen >= 0 && nLen > pSourceFieldDef->nMaxLen)
+    {
+      sprintf(szLastFieldMappingError, "Content too long (maximum length %d)", pSourceFieldDef->nMaxLen);
+      return 2;
+    }
+
+    if (!CheckRegex(pszSourceValue, pSourceFieldDef->szFormat))
+    {
+      // source string does not match regular expression
+      int nLen2 = strlen(pSourceFieldDef->szFormat);
+      if (nLen2 > MAX_FORMAT_ERROR_LEN)
+      {
+        nLen2 = MAX_FORMAT_ERROR_LEN;
+        mystrncpy(szShortFormat, pSourceFieldDef->szFormat, nLen2 + 1);
+        strcpy(szShortFormat + nLen2, " ...");
+      }
+      else
+        strcpy(szShortFormat, pSourceFieldDef->szFormat);
+
+      if (*szShortFormat == ',')
+      {
+        *szShortFormat = '(';
+        nLen2 = strlen(szShortFormat);
+        if (nLen2 > 2 && szShortFormat[nLen2 - 1] == ',')
+          szShortFormat[nLen2 - 1] = ')';
+        sprintf(szLastFieldMappingError, "Value not found in list %s", szShortFormat);
+      }
+      else
+        sprintf(szLastFieldMappingError, "Invalid characters found (does not match %s)", szShortFormat);
+
+      return 3;
+    }
+
+    // source value is valid
+    if (*pSourceFieldDef->szFormat == ',' && *pDestFieldDef->szFormat == ',' && strcmp(pSourceFieldDef->szFormat, pDestFieldDef->szFormat) != 0)
+    {
+      // source and destination format contain list of valid strings --> map content
+      cpchar pszSourceFormat = pSourceFieldDef->szFormat + 1;
+      cpchar pszDestFormat = pDestFieldDef->szFormat + 1;
+      cpchar pszTemp = NULL;
+      bool bFound = false;
+
+      while (!bFound && *pszSourceFormat && *pszDestFormat)
+      {
+        if (strncmp(pszSourceFormat, pszSourceValue, nLen) == 0 /*&& strlen(pszSourceFormat) > nLen*/ && pszSourceFormat[nLen] == ',')
+        {
+          CopyStringTill(pszDestValue, pszDestFormat, ',');
+          bFound = true;
+        }
+        else
+        {
+          // goto next string in list of source format
+          pszTemp = strchr(pszSourceFormat, ',');
+          pszSourceFormat = pszTemp ? pszTemp + 1 : strchr(pszSourceFormat, '\0');
+          // goto next string in list of destination format
+          pszTemp = strchr(pszDestFormat, ',');
+          pszDestFormat = pszTemp ? pszTemp + 1 : strchr(pszDestFormat, '\0');
+        }
+      }
+    }
+    else
+    {
+      // source value is valid, so copy source value to destination buffer
+      strcpy(pszDestValue, pszSourceValue);
+    }
+
+    return nErrorCode;
+  }
+  // end of function "MapTextFormat"
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int MapBoolFormat(cpchar pszSourceValue, CPFieldDefinition pSourceFieldDef, pchar pszDestValue, CPFieldDefinition pDestFieldDef)
+  {
+    cpchar pszSourceFormat = pSourceFieldDef->szFormat;
+    cpchar pszDestFormat = pDestFieldDef->szFormat;
+    cpchar pPos = NULL;
+    char szShortFormat[MAX_FORMAT_ERROR_SIZE + 4];
+
+    if (!pszSourceFormat || !*pszSourceFormat)
+      pszSourceFormat = szDefaultBooleanFormat;
+
+    if (!pszDestFormat || !*pszDestFormat)
+      pszDestFormat = szDefaultBooleanFormat;
+
+    *szLastFieldMappingError = '\0';
+
+    if (!*pszSourceValue && !pSourceFieldDef->bMandatory)
+      return 0; // empty value is allowed for optional fields
+
+    if (!CheckRegex(pszSourceValue, pszSourceFormat))
+    {
+      int nLen = strlen(pSourceFieldDef->szFormat);
+      if (nLen > MAX_FORMAT_ERROR_LEN)
+      {
+        nLen = MAX_FORMAT_ERROR_LEN;
+        mystrncpy(szShortFormat, pSourceFieldDef->szFormat, nLen + 1);
+        strcpy(szShortFormat + nLen, " ...");
+      }
+      else
+        strcpy(szShortFormat, pSourceFieldDef->szFormat);
+
       *szShortFormat = '(';
-      nLen2 = strlen(szShortFormat);
-      if (nLen2 > 2 && szShortFormat[nLen2-1] == ',')
-        szShortFormat[nLen2-1] = ')';
+      nLen = strlen(szShortFormat);
+      if (nLen > 2 && szShortFormat[nLen - 1] == ',')
+        szShortFormat[nLen - 1] = ')';
       sprintf(szLastFieldMappingError, "Value not found in list %s", szShortFormat);
+      return 3;
     }
-    else
-      sprintf(szLastFieldMappingError, "Invalid characters found (does not match %s)", szShortFormat);
 
-    return 3;
+    // source value is valid
+    pPos = strchr(pszDestFormat + 1, ',');
+    if (!pPos)
+    {
+      sprintf(szLastFieldMappingError, "Second string missing in destination format %s", pszDestFormat);
+      return 4;
+    }
+
+    // source value matching first or second string defined in source format ?
+    if (strncmp(pszSourceValue, pszSourceFormat + 1, strlen(pszSourceValue)) == 0)
+      CopyStringTill(pszDestValue, pszDestFormat + 1, ','); // copy first string defined in destination format (e.g. "true")
+    else
+      CopyStringTill(pszDestValue, pPos + 1, ','); // copy second string defined in destination format (e.g. "false")
+
+    return 0; // success
   }
 
-  // source value is valid
-  if (*pSourceFieldDef->szFormat == ',' && *pDestFieldDef->szFormat == ',' && strcmp(pSourceFieldDef->szFormat, pDestFieldDef->szFormat) != 0) {
-    // source and destination format contain list of valid strings --> map content
-    cpchar pszSourceFormat = pSourceFieldDef->szFormat + 1;
-    cpchar pszDestFormat = pDestFieldDef->szFormat + 1;
-    cpchar pszTemp = NULL;
-    bool bFound = false;
+  //--------------------------------------------------------------------------------------------------------
 
-    while (!bFound && *pszSourceFormat && *pszDestFormat) {
-      if (strncmp(pszSourceFormat, pszSourceValue, nLen) == 0 /*&& strlen(pszSourceFormat) > nLen*/ && pszSourceFormat[nLen] == ',') {
-        CopyStringTill(pszDestValue, pszDestFormat, ',');
-        bFound = true;
+  int MapCsvToXmlValue(FieldMapping const *pFieldMapping, cpchar pCsvValue, pchar pXmlValue, int nMaxLen)
+  {
+    int nErrorCode = 0;
+    char szErrorMessage[MAX_ERROR_MESSAGE_SIZE];
+    cpchar pszFormat = pFieldMapping->xml.szFormat;
+
+    // mandatory field without content ?
+    if (!*pCsvValue && pFieldMapping->csv.bMandatory)
+    {
+      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, "Mandatory field empty");
+      return 1;
+    }
+
+    // optional field without content ?
+    if (!*pCsvValue && !pFieldMapping->csv.bMandatory)
+      return 0; // nothing to do
+
+    if (pFieldMapping->csv.cType == 'B' /*BOOLEAN*/ && pFieldMapping->xml.cType == 'B' /*BOOLEAN*/)
+    {
+      // map boolean value
+      nErrorCode = MapBoolFormat(pCsvValue, &pFieldMapping->csv, pXmlValue, &pFieldMapping->xml);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
+    }
+
+    if (pFieldMapping->csv.cType == 'D' /*DATE*/ && pFieldMapping->xml.cType == 'D' /*DATE*/)
+    {
+      // map date value
+      if (pszFormat == NULL || strlen(pszFormat) < 10)
+        pszFormat = szXmlShortDateFormat;
+
+      if ((int)strlen(pszFormat) <= nMaxLen)
+        nErrorCode = MapDateFormat(pCsvValue, pFieldMapping->csv.szFormat, pXmlValue, pszFormat);
+      else
+        nErrorCode = -1;
+
+      if (nErrorCode > 0)
+      {
+        sprintf(szErrorMessage, "Invalid date (does not match '%s')", pFieldMapping->csv.szFormat);
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szErrorMessage);
       }
-      else {
-        // goto next string in list of source format
-        pszTemp = strchr(pszSourceFormat, ',');
-        pszSourceFormat = pszTemp ? pszTemp+1 : strchr(pszSourceFormat, '\0');
-        // goto next string in list of destination format
-        pszTemp = strchr(pszDestFormat, ',');
-        pszDestFormat = pszTemp ? pszTemp+1 : strchr(pszDestFormat, '\0');
+    }
+
+    if (pFieldMapping->csv.cType == 'I' /*INTEGER*/ && pFieldMapping->xml.cType == 'I' /*INTEGER*/)
+    {
+      nErrorCode = MapIntFormat(pCsvValue, pFieldMapping->csv.szFormat, pXmlValue, pszFormat, nMaxLen);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
+    }
+
+    if (pFieldMapping->csv.cType == 'N' /*NUMBER*/ && pFieldMapping->xml.cType == 'N' /*NUMBER*/)
+    {
+      nErrorCode = MapNumberFormat(pCsvValue, cDecimalPoint, pFieldMapping->csv.szFormat, pXmlValue, '.', pszFormat, nMaxLen);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
+    }
+
+    if (pFieldMapping->csv.cType == 'T' /*TEXT*/ && pFieldMapping->xml.cType == 'T' /*TEXT*/)
+    {
+      nErrorCode = MapTextFormat(pCsvValue, &pFieldMapping->csv, pXmlValue, &pFieldMapping->xml, nMaxLen);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
+    }
+
+    return nErrorCode;
+  }
+  // end of function "MapCsvToXmlValue"
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int MapXmlToCsvValue(FieldMapping const *pFieldMapping, cpchar pXmlValue, cpchar pXPath, pchar pCsvValue, int nMaxLen)
+  {
+    int nErrorCode = 0;
+    char szErrorMessage[MAX_ERROR_MESSAGE_SIZE];
+    cpchar pszFromFormat = pFieldMapping->xml.szFormat;
+    cpchar pszToFormat = pFieldMapping->csv.szFormat;
+
+    // mandatory field without content ?
+    if (!*pXmlValue && pFieldMapping->xml.bMandatory)
+    {
+      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, "Mandatory field missing or empty");
+      return 1;
+    }
+
+    if (pFieldMapping->csv.cType == 'B' /*BOOLEAN*/ && pFieldMapping->xml.cType == 'B' /*BOOLEAN*/)
+    {
+      // map boolean value
+      nErrorCode = MapBoolFormat(pXmlValue, &pFieldMapping->xml, pCsvValue, &pFieldMapping->csv);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
+    }
+
+    if (pFieldMapping->csv.cType == 'D' /*DATE*/ && pFieldMapping->xml.cType == 'D' /*DATE*/)
+    {
+      // map date value
+      if (pszFromFormat == NULL || strlen(pszFromFormat) < 10)
+        pszFromFormat = szXmlShortDateFormat;
+      if (pszToFormat == NULL)
+        pszToFormat = szCsvDefaultDateFormat;
+
+      if ((int)strlen(pszToFormat) <= nMaxLen)
+        nErrorCode = MapDateFormat(pXmlValue, pszFromFormat, pCsvValue, pszToFormat);
+      else
+        nErrorCode = -1;
+
+      if (nErrorCode > 0)
+      {
+        sprintf(szErrorMessage, "Invalid date (does not match '%s')", pszFromFormat);
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szErrorMessage);
       }
     }
-  }
-  else {
-    // source value is valid, so copy source value to destination buffer
-    strcpy(pszDestValue, pszSourceValue);
-  }
 
-  return nErrorCode;
-}
-// end of function "MapTextFormat"
-
-//--------------------------------------------------------------------------------------------------------
-
-int MapBoolFormat(cpchar pszSourceValue, CPFieldDefinition pSourceFieldDef, pchar pszDestValue, CPFieldDefinition pDestFieldDef)
-{
-  cpchar pszSourceFormat = pSourceFieldDef->szFormat;
-  cpchar pszDestFormat = pDestFieldDef->szFormat;
-  cpchar pPos = NULL;
-  char szShortFormat[MAX_FORMAT_ERROR_SIZE+4];
-
-  if (!pszSourceFormat || !*pszSourceFormat)
-    pszSourceFormat = szDefaultBooleanFormat;
-
-  if (!pszDestFormat || !*pszDestFormat)
-    pszDestFormat = szDefaultBooleanFormat;
-
-  *szLastFieldMappingError = '\0';
-
-  if (!*pszSourceValue && !pSourceFieldDef->bMandatory)
-    return 0;  // empty value is allowed for optional fields
-
-  if (!CheckRegex(pszSourceValue, pszSourceFormat)) {
-    int nLen = strlen(pSourceFieldDef->szFormat);
-    if (nLen > MAX_FORMAT_ERROR_LEN) {
-      nLen = MAX_FORMAT_ERROR_LEN;
-      mystrncpy(szShortFormat, pSourceFieldDef->szFormat, nLen + 1);
-      strcpy(szShortFormat + nLen, " ...");
+    if (pFieldMapping->csv.cType == 'I' /*INTEGER*/ && pFieldMapping->xml.cType == 'I' /*INTEGER*/)
+    {
+      // map integer value
+      nErrorCode = MapIntFormat(pXmlValue, pFieldMapping->xml.szFormat, pCsvValue, pFieldMapping->csv.szFormat, nMaxLen);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
     }
-    else
-      strcpy(szShortFormat, pSourceFieldDef->szFormat);
 
-    *szShortFormat = '(';
-    nLen = strlen(szShortFormat);
-    if (nLen > 2 && szShortFormat[nLen-1] == ',')
-      szShortFormat[nLen-1] = ')';
-    sprintf(szLastFieldMappingError, "Value not found in list %s", szShortFormat);
-    return 3;
-  }
-
-  // source value is valid
-  pPos = strchr(pszDestFormat+1, ',');
-  if (!pPos) {
-    sprintf(szLastFieldMappingError, "Second string missing in destination format %s", pszDestFormat);
-    return 4;
-  }
-
-  // source value matching first or second string defined in source format ?
-  if (strncmp(pszSourceValue, pszSourceFormat + 1, strlen(pszSourceValue)) == 0)
-    CopyStringTill(pszDestValue, pszDestFormat + 1, ',');  // copy first string defined in destination format (e.g. "true")
-  else
-    CopyStringTill(pszDestValue, pPos + 1, ',');  // copy second string defined in destination format (e.g. "false")
-
-  return 0;  // success
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int MapCsvToXmlValue(FieldMapping const *pFieldMapping, cpchar pCsvValue, pchar pXmlValue, int nMaxLen)
-{
-  int nErrorCode = 0;
-  char szErrorMessage[MAX_ERROR_MESSAGE_SIZE];
-  cpchar pszFormat = pFieldMapping->xml.szFormat;
-
-  // mandatory field without content ?
-  if (!*pCsvValue && pFieldMapping->csv.bMandatory) {
-    LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, "Mandatory field empty");
-    return 1;
-  }
-
-  // optional field without content ?
-  if (!*pCsvValue && !pFieldMapping->csv.bMandatory)
-    return 0;  // nothing to do
-
-  if (pFieldMapping->csv.cType == 'B'/*BOOLEAN*/ && pFieldMapping->xml.cType == 'B'/*BOOLEAN*/) {
-    // map boolean value
-    nErrorCode = MapBoolFormat(pCsvValue, &pFieldMapping->csv, pXmlValue, &pFieldMapping->xml);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
-  }
-
-  if (pFieldMapping->csv.cType == 'D'/*DATE*/ && pFieldMapping->xml.cType == 'D'/*DATE*/) {
-    // map date value
-    if (pszFormat == NULL || strlen(pszFormat) < 10)
-      pszFormat = szXmlShortDateFormat;
-
-    if ((int)strlen(pszFormat) <= nMaxLen)
-      nErrorCode = MapDateFormat(pCsvValue, pFieldMapping->csv.szFormat, pXmlValue, pszFormat);
-    else
-      nErrorCode = -1;
-
-    if (nErrorCode > 0) {
-      sprintf(szErrorMessage, "Invalid date (does not match '%s')", pFieldMapping->csv.szFormat);
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szErrorMessage);
+    if (pFieldMapping->csv.cType == 'N' /*NUMBER*/ && pFieldMapping->xml.cType == 'N' /*NUMBER*/)
+    {
+      // map xml number to csv number format
+      nErrorCode = MapNumberFormat(pXmlValue, '.', pFieldMapping->xml.szFormat, pCsvValue, cDecimalPoint, pszToFormat, nMaxLen);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
     }
-  }
 
-  if (pFieldMapping->csv.cType == 'I'/*INTEGER*/ && pFieldMapping->xml.cType == 'I'/*INTEGER*/) {
-    nErrorCode = MapIntFormat(pCsvValue, pFieldMapping->csv.szFormat, pXmlValue, pszFormat, nMaxLen);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
-  }
-
-  if (pFieldMapping->csv.cType == 'N'/*NUMBER*/ && pFieldMapping->xml.cType == 'N'/*NUMBER*/) {
-    nErrorCode = MapNumberFormat(pCsvValue, cDecimalPoint, pFieldMapping->csv.szFormat, pXmlValue, '.', pszFormat, nMaxLen);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
-  }
-
-  if (pFieldMapping->csv.cType == 'T'/*TEXT*/ && pFieldMapping->xml.cType == 'T'/*TEXT*/) {
-    nErrorCode = MapTextFormat(pCsvValue, &pFieldMapping->csv, pXmlValue, &pFieldMapping->xml, nMaxLen);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pFieldMapping->xml.szContent, pCsvValue, szLastFieldMappingError);
-  }
-
-  return nErrorCode;
-}
-// end of function "MapCsvToXmlValue"
-
-//--------------------------------------------------------------------------------------------------------
-
-int MapXmlToCsvValue(FieldMapping const *pFieldMapping, cpchar pXmlValue, cpchar pXPath, pchar pCsvValue, int nMaxLen)
-{
-  int nErrorCode = 0;
-  char szErrorMessage[MAX_ERROR_MESSAGE_SIZE];
-  cpchar pszFromFormat = pFieldMapping->xml.szFormat;
-  cpchar pszToFormat = pFieldMapping->csv.szFormat;
-
-  // mandatory field without content ?
-  if (!*pXmlValue && pFieldMapping->xml.bMandatory) {
-    LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, "Mandatory field missing or empty");
-    return 1;
-  }
-
-  if (pFieldMapping->csv.cType == 'B'/*BOOLEAN*/ && pFieldMapping->xml.cType == 'B'/*BOOLEAN*/) {
-    // map boolean value
-    nErrorCode = MapBoolFormat(pXmlValue, &pFieldMapping->xml, pCsvValue, &pFieldMapping->csv);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
-  }
-
-  if (pFieldMapping->csv.cType == 'D'/*DATE*/ && pFieldMapping->xml.cType == 'D'/*DATE*/) {
-    // map date value
-    if (pszFromFormat == NULL || strlen(pszFromFormat) < 10)
-      pszFromFormat = szXmlShortDateFormat;
-    if (pszToFormat == NULL)
-      pszToFormat = szCsvDefaultDateFormat;
-
-    if ((int)strlen(pszToFormat) <= nMaxLen)
-      nErrorCode = MapDateFormat(pXmlValue, pszFromFormat, pCsvValue, pszToFormat);
-    else
-      nErrorCode = -1;
-
-    if (nErrorCode > 0) {
-      sprintf(szErrorMessage, "Invalid date (does not match '%s')", pszFromFormat);
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szErrorMessage);
+    if (pFieldMapping->csv.cType == 'T' /*TEXT*/ && pFieldMapping->xml.cType == 'T' /*TEXT*/)
+    {
+      // map text value
+      nErrorCode = MapTextFormat(pXmlValue, &pFieldMapping->xml, pCsvValue, &pFieldMapping->csv, nMaxLen);
+      if (nErrorCode > 0)
+        LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
     }
+
+    return nErrorCode;
   }
+  // end of function "MapXmlToCsvValue"
 
-  if (pFieldMapping->csv.cType == 'I'/*INTEGER*/ && pFieldMapping->xml.cType == 'I'/*INTEGER*/) {
-    // map integer value
-    nErrorCode = MapIntFormat(pXmlValue, pFieldMapping->xml.szFormat, pCsvValue, pFieldMapping->csv.szFormat, nMaxLen);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
-  }
+  //--------------------------------------------------------------------------------------------------------
 
-  if (pFieldMapping->csv.cType == 'N'/*NUMBER*/ && pFieldMapping->xml.cType == 'N'/*NUMBER*/) {
-    // map xml number to csv number format
-    nErrorCode = MapNumberFormat(pXmlValue, '.', pFieldMapping->xml.szFormat, pCsvValue, cDecimalPoint, pszToFormat, nMaxLen);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
-  }
-
-  if (pFieldMapping->csv.cType == 'T'/*TEXT*/ && pFieldMapping->xml.cType == 'T'/*TEXT*/) {
-    // map text value
-    nErrorCode = MapTextFormat(pXmlValue, &pFieldMapping->xml, pCsvValue, &pFieldMapping->csv, nMaxLen);
-    if (nErrorCode > 0)
-      LogXmlError(nCurrentCsvLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXPath, pXmlValue, szLastFieldMappingError);
-  }
-
-  return nErrorCode;
-}
-// end of function "MapXmlToCsvValue"
-
-//--------------------------------------------------------------------------------------------------------
-
-/*
+  /*
 CSV_OP CSV_CONTENT    CSV_MO CSV_TYPE	CSV_MIN_LEN	CSV_MAX_LEN	CSV_FORMAT	CSV_DEFAULT	XML_OP	XML_CONTENT	XML_MO	XML_TYPE	XML_MIN_LEN	XML_MAX_LEN	XML_FORMAT	XML_DEFAULT
 FIX    Constant Value M      TEXT	3	3			FIX	Constant Value	M	TEXT	3	3
 VAR    Variables      O      INTEGER					VAR	Macro	O	INTEGER
@@ -1646,1222 +1817,1334 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
       BOOLEAN			Ja/Nein					BOOLEAN
 */
 
-//--------------------------------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------------------------
 
-char *GetNextLine(pchar *ppReadPos)
-{
-  char *pReadPos = *ppReadPos;
-  char *pResult = pReadPos;
+  char *GetNextLine(pchar *ppReadPos)
+  {
+    char *pReadPos = *ppReadPos;
+    char *pResult = pReadPos;
 
-  if (pReadPos && *pReadPos) {
-    while (strchr("\r\n", *pReadPos) == NULL)
-      pReadPos++;
-    if (*pReadPos) {
-      *pReadPos++ = '\0';
-      if (*pReadPos == '\n')
+    if (pReadPos && *pReadPos)
+    {
+      while (strchr("\r\n", *pReadPos) == NULL)
         pReadPos++;
+      if (*pReadPos)
+      {
+        *pReadPos++ = '\0';
+        if (*pReadPos == '\n')
+          pReadPos++;
+      }
+      *ppReadPos = pReadPos;
     }
-    *ppReadPos = pReadPos;
+    else
+      pResult = NULL;
+
+    return pResult;
   }
-  else
-    pResult = NULL;
 
-  return pResult;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  int GetFields(char *pLine, char cDelimiter, pchar *aField, int nMaxFields, bool *pbColumnQuoted = NULL)
+  {
+    char *pPos = pLine;
+    int nFields = 0;
+    char *pDelimiter = NULL;
+    char *pEnd = NULL;
+    char *pNext = NULL;
 
-int GetFields(char *pLine, char cDelimiter, pchar *aField, int nMaxFields, bool *pbColumnQuoted = NULL)
-{
-  char *pPos = pLine;
-  int nFields = 0;
-  char *pDelimiter = NULL;
-  char *pEnd = NULL;
-  char *pNext = NULL;
-
-  // skip spaces and tabs at the beginning of the field
-  while (*pPos && strchr(szIgnoreChars, *pPos))
-    pPos++;
-
-  while (*pPos && nFields < nMaxFields) {
-    if (*pPos == '"') {
-      // store flag that value has been quoted
-      if (pbColumnQuoted)
-        pbColumnQuoted[nFields] = true;
-
-      // store start address of current field
-      aField[nFields++] = ++pPos;
-
-      // search for end of string
-      pEnd = strchr(pPos, '"');
-      if (pEnd) {
-        *pEnd = '\0';
-        pPos = pEnd + 1;
-
-        // search for delimiter
-        pDelimiter = strchr(pPos, cDelimiter);
-        if (pDelimiter)
-          pPos = pDelimiter + 1;
-        else
-          pPos = strchr(pPos, '\0');  // end of line
-      }
-      else
-        pPos = strchr(pPos, '\0');  // end of line
-    }
-    else {
-      // store start address of current field
-      aField[nFields++] = pPos;
-
-      // search for next delimiter
-      pDelimiter = strchr(pPos, cDelimiter);
-
-      // get end of current field
-      if (pDelimiter) {
-        pEnd = pDelimiter;
-        pNext = pDelimiter + 1;
-      }
-      else {
-        pEnd = strchr(pPos, '\0');  // end of line
-        pNext = pEnd;
-      }
-
-      // skip spaces and tabs at the end of the field
-      while (pEnd > pPos && strchr(szIgnoreChars, *(pEnd-1)))
-        pEnd--;
-      *pEnd = '\0';
-
-      pPos = pNext;
-    }
-
-    // skip spaces and tabs at the beginning of the next field
+    // skip spaces and tabs at the beginning of the field
     while (*pPos && strchr(szIgnoreChars, *pPos))
       pPos++;
+
+    while (*pPos && nFields < nMaxFields)
+    {
+      if (*pPos == '"')
+      {
+        // store flag that value has been quoted
+        if (pbColumnQuoted)
+          pbColumnQuoted[nFields] = true;
+
+        // store start address of current field
+        aField[nFields++] = ++pPos;
+
+        // search for end of string
+        pEnd = strchr(pPos, '"');
+        if (pEnd)
+        {
+          *pEnd = '\0';
+          pPos = pEnd + 1;
+
+          // search for delimiter
+          pDelimiter = strchr(pPos, cDelimiter);
+          if (pDelimiter)
+            pPos = pDelimiter + 1;
+          else
+            pPos = strchr(pPos, '\0'); // end of line
+        }
+        else
+          pPos = strchr(pPos, '\0'); // end of line
+      }
+      else
+      {
+        // store start address of current field
+        aField[nFields++] = pPos;
+
+        // search for next delimiter
+        pDelimiter = strchr(pPos, cDelimiter);
+
+        // get end of current field
+        if (pDelimiter)
+        {
+          pEnd = pDelimiter;
+          pNext = pDelimiter + 1;
+        }
+        else
+        {
+          pEnd = strchr(pPos, '\0'); // end of line
+          pNext = pEnd;
+        }
+
+        // skip spaces and tabs at the end of the field
+        while (pEnd > pPos && strchr(szIgnoreChars, *(pEnd - 1)))
+          pEnd--;
+        *pEnd = '\0';
+
+        pPos = pNext;
+      }
+
+      // skip spaces and tabs at the beginning of the next field
+      while (*pPos && strchr(szIgnoreChars, *pPos))
+        pPos++;
+    }
+
+    return nFields;
   }
+  // end of function "GetFields"
 
-  return nFields;
-}
-// end of function "GetFields"
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  // OLD VERSION (still in use for csv conditions):
+  void OldParseCondition(cpchar pszCondition, pchar pszConditionBuffer, pchar *ppszLeftPart, pchar *ppszOperator, pchar *ppszRightPart)
+  {
+    // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
+    //   or like "(@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency and @toCcy = Funds/Fund/Currency and @mulDiv = 'D') or (@fromCcy = Funds/Fund/Currency and @toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency and @mulDiv = 'M')" ?
+    // Supported operators: "=", "!=", "<", ">"
+    //
+    // Input Parameters:
+    //   pszCondition .... string containing the condition (e.g. "CCY != FUND_CCY")
+    //   pszConditionBuffer .... buffer for content of result strings (must have size MAX_CONDITION_SIZE!)
+    //
+    // Result parameters:
+    //   *ppszLeftPart .... pointer to the left part of the condition (e.g. "CCY")
+    //   *ppszOperator .... pointer to the operator of the condition (e.g. "!=")
+    //   *ppszRightPart ... pointer to the right part of the condition (e.g. "FUND_CCY")
+    //
+    char szOperator[5];
+    char *pPos;
 
-// OLD VERSION (still in use for csv conditions):
-void OldParseCondition(cpchar pszCondition, pchar pszConditionBuffer, pchar *ppszLeftPart, pchar *ppszOperator, pchar *ppszRightPart)
-{
-  // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
-  //   or like "(@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency and @toCcy = Funds/Fund/Currency and @mulDiv = 'D') or (@fromCcy = Funds/Fund/Currency and @toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency and @mulDiv = 'M')" ?
-  // Supported operators: "=", "!=", "<", ">"
-  //
-  // Input Parameters:
-  //   pszCondition .... string containing the condition (e.g. "CCY != FUND_CCY")
-  //   pszConditionBuffer .... buffer for content of result strings (must have size MAX_CONDITION_SIZE!)
-  // 
-  // Result parameters:
-  //   *ppszLeftPart .... pointer to the left part of the condition (e.g. "CCY")
-  //   *ppszOperator .... pointer to the operator of the condition (e.g. "!=")
-  //   *ppszRightPart ... pointer to the right part of the condition (e.g. "FUND_CCY")
-  //
-  char szOperator[5];
-  char *pPos;
+    // initialize result parameters
+    *ppszLeftPart = NULL;
+    *ppszOperator = NULL;
+    *ppszRightPart = NULL;
 
-  // initialize result parameters
-  *ppszLeftPart = NULL;
-  *ppszOperator = NULL;
-  *ppszRightPart = NULL;
+    if (strlen(pszCondition) > MAX_CONDITION_LEN)
+      return;
 
-	if (strlen(pszCondition) > MAX_CONDITION_LEN)
-		return;
+    strcpy(pszConditionBuffer, pszCondition);
 
-	strcpy(pszConditionBuffer, pszCondition);
-
-  // search for operator !=
-  strcpy(szOperator, " != ");
-  pPos = strstr(pszConditionBuffer, szOperator);
-
-  if (!pPos) {
-    // search for operator =
-    strcpy(szOperator, " = ");
+    // search for operator !=
+    strcpy(szOperator, " != ");
     pPos = strstr(pszConditionBuffer, szOperator);
+
+    if (!pPos)
+    {
+      // search for operator =
+      strcpy(szOperator, " = ");
+      pPos = strstr(pszConditionBuffer, szOperator);
+    }
+
+    if (!pPos)
+    {
+      // search for operator <
+      strcpy(szOperator, " < ");
+      pPos = strstr(pszConditionBuffer, szOperator);
+    }
+
+    if (!pPos)
+    {
+      // search for operator >
+      strcpy(szOperator, " > ");
+      pPos = strstr(pszConditionBuffer, szOperator);
+    }
+
+    if (pPos)
+    {
+      // operator found
+      *ppszLeftPart = pszConditionBuffer;
+      *pPos++ = '\0';
+      *ppszOperator = pPos;
+      pPos += strlen(szOperator) - 2;
+      *pPos++ = '\0';
+      *ppszRightPart = pPos;
+    }
   }
 
-  if (!pPos) {
-    // search for operator <
-    strcpy(szOperator, " < ");
-    pPos = strstr(pszConditionBuffer, szOperator);
-  }
+  //--------------------------------------------------------------------------------------------------------
 
-  if (!pPos) {
-    // search for operator >
-    strcpy(szOperator, " > ");
-    pPos = strstr(pszConditionBuffer, szOperator);
-  }
+  int ParseSimpleCondition(pchar pszCondition, PSimpleCondition pSimpleCondition)
+  {
+    // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
+    // Supported operators: "=", "!=", "<", ">"
+    //
+    // Input Parameters:
+    //   pszCondition .... string containing the condition (e.g. "CCY != FUND_CCY")
+    //
+    // Result parameters:
+    //   *ppszLeftPart .... pointer to the left part of the condition (e.g. "CCY")
+    //   *ppszOperator .... pointer to the operator of the condition (e.g. "!=")
+    //   *ppszRightPart ... pointer to the right part of the condition (e.g. "FUND_CCY")
+    //
+    char szOperator[5];
+    char *pPos;
+    int len;
 
-  if (pPos) {
+    // initialize result parameters
+    pSimpleCondition->szLeftPart = NULL;
+    pSimpleCondition->szOperator = NULL;
+    pSimpleCondition->szRightPart = NULL;
+
+    // search for operator !=
+    strcpy(szOperator, " != ");
+    pPos = strstr(pszCondition, szOperator);
+
+    if (!pPos)
+    {
+      // search for operator =
+      strcpy(szOperator, " = ");
+      pPos = strstr(pszCondition, szOperator);
+    }
+
+    if (!pPos)
+    {
+      // search for operator <
+      strcpy(szOperator, " < ");
+      pPos = strstr(pszCondition, szOperator);
+    }
+
+    if (!pPos)
+    {
+      // search for operator >
+      strcpy(szOperator, " > ");
+      pPos = strstr(pszCondition, szOperator);
+    }
+
+    if (!pPos)
+    {
+      sprintf(szLastError, "No compare operator found (' < ',' > ',' = ',' != ')");
+      pszLastErrorPos = pszCondition;
+      return 1;
+    }
+
     // operator found
-    *ppszLeftPart = pszConditionBuffer;
+    pSimpleCondition->szLeftPart = pszCondition;
     *pPos++ = '\0';
-    *ppszOperator = pPos;
+    pSimpleCondition->szOperator = pPos;
     pPos += strlen(szOperator) - 2;
     *pPos++ = '\0';
-    *ppszRightPart = pPos;
+    pSimpleCondition->szRightPart = pPos;
+
+    len = strlen(pPos);
+    if (*pPos == '\'' && len >= 2)
+    {
+      // fill szCurrentValue with unquoted right part of condition (string content)
+      pSimpleCondition->szCurrentValue = (pchar)MyGetMemory(len - 1);
+      if (pSimpleCondition->szCurrentValue)
+        mystrncpy(pSimpleCondition->szCurrentValue, pPos + 1, len - 1);
+    }
+    else
+      pSimpleCondition->szCurrentValue = NULL;
+
+    return 0;
   }
-}
+  // end of function "ParseSimpleCondition"
 
-//--------------------------------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------------------------
 
-int ParseSimpleCondition(pchar pszCondition, PSimpleCondition pSimpleCondition)
-{
-  // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
-  // Supported operators: "=", "!=", "<", ">"
-  //
-  // Input Parameters:
-  //   pszCondition .... string containing the condition (e.g. "CCY != FUND_CCY")
-  // 
-  // Result parameters:
-  //   *ppszLeftPart .... pointer to the left part of the condition (e.g. "CCY")
-  //   *ppszOperator .... pointer to the operator of the condition (e.g. "!=")
-  //   *ppszRightPart ... pointer to the right part of the condition (e.g. "FUND_CCY")
-  //
-  char szOperator[5];
-  char *pPos;
-  int len;
+  PComplexCondition GetNewComplexCondition()
+  {
+    PComplexCondition pComplexCondition = (PComplexCondition)MyGetMemory(sizeof(ComplexCondition));
 
-  // initialize result parameters
-  pSimpleCondition->szLeftPart = NULL;
-  pSimpleCondition->szOperator = NULL;
-  pSimpleCondition->szRightPart = NULL;
+    if (pComplexCondition)
+    {
+      pComplexCondition->LeftCondition.pComplexCondition = NULL;
+      pComplexCondition->LeftCondition.pSimpleCondition = NULL;
+      pComplexCondition->op = NO_OP;
+      pComplexCondition->RightCondition.pComplexCondition = NULL;
+      pComplexCondition->RightCondition.pSimpleCondition = NULL;
+    }
 
-  // search for operator !=
-  strcpy(szOperator, " != ");
-  pPos = strstr(pszCondition, szOperator);
-
-  if (!pPos) {
-    // search for operator =
-    strcpy(szOperator, " = ");
-    pPos = strstr(pszCondition, szOperator);
+    return pComplexCondition;
   }
 
-  if (!pPos) {
-    // search for operator <
-    strcpy(szOperator, " < ");
-    pPos = strstr(pszCondition, szOperator);
-  }
+  //--------------------------------------------------------------------------------------------------------
 
-  if (!pPos) {
-    // search for operator >
-    strcpy(szOperator, " > ");
-    pPos = strstr(pszCondition, szOperator);
-  }
+  int ParseCondition(pchar pszCondition, PCondition pCondition, pchar *ppNext = NULL)
+  {
+    // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
+    //   or like "((@fromCcy = xpath1) and (@toCcy = xpath2) and (@mulDiv = 'D')) or ((@fromCcy = xpath3) and (@toCcy = xpath4) and (@mulDiv = 'M'))"
+    //   or like "((@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@toCcy = Funds/Fund/Currency) and (@mulDiv = 'D')) or ((@fromCcy = Funds/Fund/Currency) and (@toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@mulDiv = 'M'))"
+    // Supported operators: "=", "!=", "<", ">"
+    //
+    pchar pPos = pszCondition;
+    pchar pOpeningBracket = NULL;
+    pchar pClosingBracket = NULL;
+    PComplexCondition pComplexCondition = NULL;
+    PComplexCondition pComplexSubCondition = NULL;
+    int nReturnCode, nLen;
+    bool bEnclosingBrackets = false;
 
-  if (!pPos) {
-    sprintf(szLastError, "No compare operator found (' < ',' > ',' = ',' != ')");
-    pszLastErrorPos = pszCondition;
-    return 1;
-  }
+    pCondition->pComplexCondition = NULL;
+    pCondition->pSimpleCondition = NULL;
 
-  // operator found
-  pSimpleCondition->szLeftPart = pszCondition;
-  *pPos++ = '\0';
-  pSimpleCondition->szOperator = pPos;
-  pPos += strlen(szOperator) - 2;
-  *pPos++ = '\0';
-  pSimpleCondition->szRightPart = pPos;
-
-  len = strlen(pPos);
-  if (*pPos == '\'' && len >= 2) {
-    // fill szCurrentValue with unquoted right part of condition (string content)
-    pSimpleCondition->szCurrentValue = (pchar)MyGetMemory(len-1);
-    if (pSimpleCondition->szCurrentValue)
-      mystrncpy(pSimpleCondition->szCurrentValue, pPos + 1, len-1);
-  }
-  else
-    pSimpleCondition->szCurrentValue = NULL;
-
-  return 0;
-}
-// end of function "ParseSimpleCondition"
-
-//--------------------------------------------------------------------------------------------------------
-
-PComplexCondition GetNewComplexCondition()
-{
-  PComplexCondition pComplexCondition = (PComplexCondition)MyGetMemory(sizeof(ComplexCondition));
-
-  if (pComplexCondition) {
-    pComplexCondition->LeftCondition.pComplexCondition = NULL;
-    pComplexCondition->LeftCondition.pSimpleCondition = NULL;
-    pComplexCondition->op = NO_OP;
-    pComplexCondition->RightCondition.pComplexCondition = NULL;
-    pComplexCondition->RightCondition.pSimpleCondition = NULL;
-  }
-
-  return pComplexCondition;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int ParseCondition(pchar pszCondition, PCondition pCondition, pchar *ppNext = NULL)
-{
-  // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
-  //   or like "((@fromCcy = xpath1) and (@toCcy = xpath2) and (@mulDiv = 'D')) or ((@fromCcy = xpath3) and (@toCcy = xpath4) and (@mulDiv = 'M'))"
-  //   or like "((@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@toCcy = Funds/Fund/Currency) and (@mulDiv = 'D')) or ((@fromCcy = Funds/Fund/Currency) and (@toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@mulDiv = 'M'))"
-  // Supported operators: "=", "!=", "<", ">"
-  //
-  pchar pPos = pszCondition;
-  pchar pOpeningBracket = NULL;
-  pchar pClosingBracket = NULL;
-  PComplexCondition pComplexCondition = NULL;
-  PComplexCondition pComplexSubCondition = NULL;
-  int nReturnCode, nLen;
-  bool bEnclosingBrackets = false;
-
-  pCondition->pComplexCondition = NULL;
-  pCondition->pSimpleCondition = NULL;
-
-  /*if (*pPos) {
+    /*if (*pPos) {
     pOpeningBracket = strchr(pPos+1, '(');
     pClosingBracket = strchr(pPos+1, ')');
     if (pClosingBracket < pOpeningBracket)
       pOpeningBracket = NULL;  // opening bracket behind closing bracket
   }*/
 
-  if (*pPos == '(' /*&& pOpeningBracket*/) {
-    // complex condition with logical operator
-    pPos++;
-    pCondition->pComplexCondition = pComplexCondition = GetNewComplexCondition();
+    if (*pPos == '(' /*&& pOpeningBracket*/)
+    {
+      // complex condition with logical operator
+      pPos++;
+      pCondition->pComplexCondition = pComplexCondition = GetNewComplexCondition();
 
-    nReturnCode = ParseCondition(pPos, &pComplexCondition->LeftCondition, &pPos);
-    if (nReturnCode != 0)
-      return nReturnCode;
+      nReturnCode = ParseCondition(pPos, &pComplexCondition->LeftCondition, &pPos);
+      if (nReturnCode != 0)
+        return nReturnCode;
 
-    while (*pPos == ' ')
-      pPos++;  // skip spaces
+      while (*pPos == ' ')
+        pPos++; // skip spaces
 
-    if (strnicmp(pPos, "and", 3) == 0) {
-      pComplexCondition->op = AND_OP;
-      pPos += 3;
-    }
-    else
-      if (strnicmp(pPos, "or", 2) == 0) {
+      if (strnicmp(pPos, "and", 3) == 0)
+      {
+        pComplexCondition->op = AND_OP;
+        pPos += 3;
+      }
+      else if (strnicmp(pPos, "or", 2) == 0)
+      {
         pComplexCondition->op = OR_OP;
         pPos += 2;
       }
-      else {
+      else
+      {
         sprintf(szLastError, "Missing logical operator ('and'/'or')");
         pszLastErrorPos = pPos;
         return 1;
       }
 
-    while (*pPos == ' ')
-      pPos++;  // skip spaces
-
-    if (*pPos == '(')
-      pPos++;
-    else {
-      sprintf(szLastError, "Opening bracket '(' expected behind logical operator");
-      pszLastErrorPos = pPos;
-      return 3;
-    }
-
-    nReturnCode = ParseCondition(pPos, &pComplexCondition->RightCondition, &pPos);
-    if (nReturnCode != 0)
-      return nReturnCode;
-
-    while (*pPos == ' ')
-      pPos++;  // skip spaces
-
-    // more logical operators ?
-
-    while (strnicmp(pPos, "and", 3) == 0 || strnicmp(pPos, "or", 2) == 0) {
-      // add complex condition
-      pComplexSubCondition = GetNewComplexCondition();
-      // move old right condition to left condition of new complex condition (adding one level to condition tree)
-      pComplexSubCondition->LeftCondition = pComplexCondition->RightCondition;
-      pComplexCondition->RightCondition.pComplexCondition = pComplexSubCondition;
-      pComplexCondition->RightCondition.pSimpleCondition = NULL;
-
-      if (strnicmp(pPos, "and", 3) == 0) {
-        pComplexSubCondition->op = AND_OP;
-        nLen = 3;
-      }
-      else {
-        pComplexSubCondition->op = OR_OP;
-        nLen = 2;
-      }
-
-      if (pComplexCondition->op != pComplexSubCondition->op) {
-        sprintf(szLastError, "Logical operators (and/or) cannot be mixed on same level");
-        pszLastErrorPos = pPos;
-        return 2;
-      }
-
-      pPos += nLen;  // go to end of operator (and/or)
-
       while (*pPos == ' ')
-        pPos++;  // skip spaces
+        pPos++; // skip spaces
 
       if (*pPos == '(')
         pPos++;
-      else {
+      else
+      {
         sprintf(szLastError, "Opening bracket '(' expected behind logical operator");
         pszLastErrorPos = pPos;
         return 3;
       }
 
-      nReturnCode = ParseCondition(pPos, &pComplexSubCondition->RightCondition, &pPos);
+      nReturnCode = ParseCondition(pPos, &pComplexCondition->RightCondition, &pPos);
       if (nReturnCode != 0)
         return nReturnCode;
 
-      pComplexCondition = pComplexSubCondition;
-
       while (*pPos == ' ')
-        pPos++;  // skip spaces
-    }
+        pPos++; // skip spaces
 
-    if (*pPos == ')')
-      pPos++;
-    else {
-      sprintf(szLastError, "Closing bracket ')' or logical operator ('and'/'or') expected");
-      pszLastErrorPos = pPos;
-      return 3;
+      // more logical operators ?
+
+      while (strnicmp(pPos, "and", 3) == 0 || strnicmp(pPos, "or", 2) == 0)
+      {
+        // add complex condition
+        pComplexSubCondition = GetNewComplexCondition();
+        // move old right condition to left condition of new complex condition (adding one level to condition tree)
+        pComplexSubCondition->LeftCondition = pComplexCondition->RightCondition;
+        pComplexCondition->RightCondition.pComplexCondition = pComplexSubCondition;
+        pComplexCondition->RightCondition.pSimpleCondition = NULL;
+
+        if (strnicmp(pPos, "and", 3) == 0)
+        {
+          pComplexSubCondition->op = AND_OP;
+          nLen = 3;
+        }
+        else
+        {
+          pComplexSubCondition->op = OR_OP;
+          nLen = 2;
+        }
+
+        if (pComplexCondition->op != pComplexSubCondition->op)
+        {
+          sprintf(szLastError, "Logical operators (and/or) cannot be mixed on same level");
+          pszLastErrorPos = pPos;
+          return 2;
+        }
+
+        pPos += nLen; // go to end of operator (and/or)
+
+        while (*pPos == ' ')
+          pPos++; // skip spaces
+
+        if (*pPos == '(')
+          pPos++;
+        else
+        {
+          sprintf(szLastError, "Opening bracket '(' expected behind logical operator");
+          pszLastErrorPos = pPos;
+          return 3;
+        }
+
+        nReturnCode = ParseCondition(pPos, &pComplexSubCondition->RightCondition, &pPos);
+        if (nReturnCode != 0)
+          return nReturnCode;
+
+        pComplexCondition = pComplexSubCondition;
+
+        while (*pPos == ' ')
+          pPos++; // skip spaces
+      }
+
+      if (*pPos == ')')
+        pPos++;
+      else
+      {
+        sprintf(szLastError, "Closing bracket ')' or logical operator ('and'/'or') expected");
+        pszLastErrorPos = pPos;
+        return 3;
+      }
     }
-  }
-  else {
-    // simple condition
-    /*if (*pPos == '(') {
+    else
+    {
+      // simple condition
+      /*if (*pPos == '(') {
       bEnclosingBrackets = true;
       pPos++;
     }*/
 
-    pClosingBracket = strchr(pPos, ')');
-    if (pClosingBracket)
-      *pClosingBracket = '\0';
+      pClosingBracket = strchr(pPos, ')');
+      if (pClosingBracket)
+        *pClosingBracket = '\0';
 
-    pCondition->pSimpleCondition = (PSimpleCondition)MyGetMemory(sizeof(SimpleCondition));
+      pCondition->pSimpleCondition = (PSimpleCondition)MyGetMemory(sizeof(SimpleCondition));
 
-    nReturnCode = ParseSimpleCondition(pPos, pCondition->pSimpleCondition);
-    if (nReturnCode != 0)
-      return nReturnCode;
+      nReturnCode = ParseSimpleCondition(pPos, pCondition->pSimpleCondition);
+      if (nReturnCode != 0)
+        return nReturnCode;
 
-    if (pClosingBracket)
-      pPos = pClosingBracket + 1;
-    else
-      pPos = strchr(pPos, '\0');
-  }
-
-  if (ppNext)
-    *ppNext = pPos;
-
-  return 0;
-}
-// end of function "ParseCondition"
-
-//--------------------------------------------------------------------------------------------------------
-
-void AddAttributeToList(AttributeNameValueList *pAttrNameValueList, PCondition pCondition)
-{
-  if (pCondition->pComplexCondition) {
-    AddAttributeToList(pAttrNameValueList, &pCondition->pComplexCondition->LeftCondition);
-    if (pCondition->pComplexCondition->op == AND_OP)
-      AddAttributeToList(pAttrNameValueList, &pCondition->pComplexCondition->RightCondition);
-  }
-  
-  if (pCondition->pSimpleCondition && *pCondition->pSimpleCondition->szLeftPart == '@' && strcmp(pCondition->pSimpleCondition->szOperator, "=") == 0) {
-    if (pAttrNameValueList->nCount >= pAttrNameValueList->nMaxCount)
-      return;  // error
-
-    mystrncpy(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szName, pCondition->pSimpleCondition->szLeftPart + 1, MAX_ATTR_NAME_SIZE);
-
-    if (*pCondition->pSimpleCondition->szRightPart == '\'') {
-      mystrncpy(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szValue, pCondition->pSimpleCondition->szRightPart + 1, MAX_ATTR_VALUE_SIZE);
-      RemoveLastChar(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szValue, '\'');
-      pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].pszXPath = NULL;
-    }
-    else {
-      strcpy(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szValue, szEmptyString);
-      pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].pszXPath = pCondition->pSimpleCondition->szRightPart;
+      if (pClosingBracket)
+        pPos = pClosingBracket + 1;
+      else
+        pPos = strchr(pPos, '\0');
     }
 
-    pAttrNameValueList->nCount++;
+    if (ppNext)
+      *ppNext = pPos;
+
+    return 0;
   }
-}
+  // end of function "ParseCondition"
 
-//--------------------------------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------------------------
 
-void GetAttributeList(AttributeNameValueList *pAttrNameValueList, PCondition pCondition)
-{
-  // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
-  //   or like "((@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@toCcy = Funds/Fund/Currency) and (@mulDiv = 'D')) or ((@fromCcy = Funds/Fund/Currency) and (@toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@mulDiv = 'M'))" ?
-
-  pAttrNameValueList->nCount = 0;
-  AddAttributeToList(pAttrNameValueList, pCondition);
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-typedef struct {
-  pchar *aField;
-  int nFields;
-  int nMapIndex;
-  FieldMapping *pFieldMapping;
-  FieldDefinition *pFieldDefinition;
-} FieldMappingContext;
-
-//--------------------------------------------------------------------------------------------------------
-
-pchar LoadTextMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, /*bool bMandatory,*/ cpchar pszValidContent)
-{
-  pchar pszResult = (pchar)szEmptyString;
-
-  if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields) {
-    pszResult = pContext->aField[nFieldIndex];
-
-    // check content
-    if ((!IsEmptyString(pszValidContent) /*|| bMandatory*/) && !CheckRegex(pszResult, pszValidContent)) {
-      sprintf(szLastError, "Invalid content '%s' (not in '%s')", pszResult, pszValidContent+1);
-      LogMappingError(pContext->nMapIndex, GetOperationLongName(pContext->pFieldDefinition->cOperation), pszFieldName, szLastError);
-      pszResult = (pchar)szEmptyString;
+  void AddAttributeToList(AttributeNameValueList *pAttrNameValueList, PCondition pCondition)
+  {
+    if (pCondition->pComplexCondition)
+    {
+      AddAttributeToList(pAttrNameValueList, &pCondition->pComplexCondition->LeftCondition);
+      if (pCondition->pComplexCondition->op == AND_OP)
+        AddAttributeToList(pAttrNameValueList, &pCondition->pComplexCondition->RightCondition);
     }
-    else {
-      int nLen = strlen(pszResult);
-      if ((strcmp(pszFieldName, "CSV_FORMAT") == 0 || strcmp(pszFieldName, "XML_FORMAT") == 0) && nLen >= 3 && *pszResult == '(' && pszResult[nLen-1] == ')') {
-        // change first and last character to comma for easier check of content (comma+text+comma must be part of this string)
-        *pszResult = ',';
-        pszResult[nLen-1] = ',';
+
+    if (pCondition->pSimpleCondition && *pCondition->pSimpleCondition->szLeftPart == '@' && strcmp(pCondition->pSimpleCondition->szOperator, "=") == 0)
+    {
+      if (pAttrNameValueList->nCount >= pAttrNameValueList->nMaxCount)
+        return; // error
+
+      mystrncpy(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szName, pCondition->pSimpleCondition->szLeftPart + 1, MAX_ATTR_NAME_SIZE);
+
+      if (*pCondition->pSimpleCondition->szRightPart == '\'')
+      {
+        mystrncpy(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szValue, pCondition->pSimpleCondition->szRightPart + 1, MAX_ATTR_VALUE_SIZE);
+        RemoveLastChar(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szValue, '\'');
+        pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].pszXPath = NULL;
+      }
+      else
+      {
+        strcpy(pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].szValue, szEmptyString);
+        pAttrNameValueList->aAttrNameValue[pAttrNameValueList->nCount].pszXPath = pCondition->pSimpleCondition->szRightPart;
+      }
+
+      pAttrNameValueList->nCount++;
+    }
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void GetAttributeList(AttributeNameValueList *pAttrNameValueList, PCondition pCondition)
+  {
+    // Parses conditions like "CCY != FUND_CCY" or "48_* = '1'" (mandatory space before and after operator !)
+    //   or like "((@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@toCcy = Funds/Fund/Currency) and (@mulDiv = 'D')) or ((@fromCcy = Funds/Fund/Currency) and (@toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@mulDiv = 'M'))" ?
+
+    pAttrNameValueList->nCount = 0;
+    AddAttributeToList(pAttrNameValueList, pCondition);
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  typedef struct
+  {
+    pchar *aField;
+    int nFields;
+    int nMapIndex;
+    FieldMapping *pFieldMapping;
+    FieldDefinition *pFieldDefinition;
+  } FieldMappingContext;
+
+  //--------------------------------------------------------------------------------------------------------
+
+  pchar LoadTextMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, /*bool bMandatory,*/ cpchar pszValidContent)
+  {
+    pchar pszResult = (pchar)szEmptyString;
+
+    if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields)
+    {
+      pszResult = pContext->aField[nFieldIndex];
+
+      // check content
+      if ((!IsEmptyString(pszValidContent) /*|| bMandatory*/) && !CheckRegex(pszResult, pszValidContent))
+      {
+        sprintf(szLastError, "Invalid content '%s' (not in '%s')", pszResult, pszValidContent + 1);
+        LogMappingError(pContext->nMapIndex, GetOperationLongName(pContext->pFieldDefinition->cOperation), pszFieldName, szLastError);
+        pszResult = (pchar)szEmptyString;
+      }
+      else
+      {
+        int nLen = strlen(pszResult);
+        if ((strcmp(pszFieldName, "CSV_FORMAT") == 0 || strcmp(pszFieldName, "XML_FORMAT") == 0) && nLen >= 3 && *pszResult == '(' && pszResult[nLen - 1] == ')')
+        {
+          // change first and last character to comma for easier check of content (comma+text+comma must be part of this string)
+          *pszResult = ',';
+          pszResult[nLen - 1] = ',';
+        }
       }
     }
+
+    return pszResult;
   }
 
-  return pszResult;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  bool LoadBoolMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, cpchar pszTrue, cpchar pszFalse, bool bDefault)
+  {
+    bool bResult = bDefault;
+    pchar pszContent = NULL;
 
-bool LoadBoolMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, cpchar pszTrue, cpchar pszFalse, bool bDefault)
-{
-  bool bResult = bDefault;
-  pchar pszContent = NULL;
-
-  if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields) {
-    pszContent = pContext->aField[nFieldIndex];
-    if (!IsEmptyString(pszContent)) {
-      if (strnicmp(pszContent, pszTrue, strlen(pszTrue)) == 0)
-        bResult = true;
-      else
-        if (strnicmp(pszContent, pszFalse, strlen(pszFalse)) == 0)
+    if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields)
+    {
+      pszContent = pContext->aField[nFieldIndex];
+      if (!IsEmptyString(pszContent))
+      {
+        if (strnicmp(pszContent, pszTrue, strlen(pszTrue)) == 0)
+          bResult = true;
+        else if (strnicmp(pszContent, pszFalse, strlen(pszFalse)) == 0)
           bResult = false;
-        else {
+        else
+        {
           sprintf(szLastError, "Invalid content '%s' (not in '%s,%s')", pszContent, pszTrue, pszFalse);
           LogMappingError(pContext->nMapIndex, GetOperationLongName(pContext->pFieldDefinition->cOperation), pszFieldName, szLastError);
         }
-    }
-  }
-
-  return bResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-char LoadCharMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, bool bMandatory, cpchar pszValidContent, char cDefault)
-{
-  char cResult = cDefault;
-  pchar pszContent = NULL;
-
-  if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields) {
-    pszContent = pContext->aField[nFieldIndex];
-    // check content
-    if ((!IsEmptyString(pszValidContent) || bMandatory) && !CheckRegex(pszContent, pszValidContent)) {
-      sprintf(szLastError, "Invalid content '%s' (not in '%s')", pszContent, pszValidContent+1);
-      LogMappingError(pContext->nMapIndex, GetOperationLongName(pContext->pFieldDefinition->cOperation), pszFieldName, szLastError);
-    }
-    else
-      cResult = toupper(*pszContent);
-  }
-
-  return cResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int LoadIntMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, int nDefault)
-{
-  int nResult = nDefault;
-  pchar pszContent = NULL;
-
-  if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields) {
-    pszContent = pContext->aField[nFieldIndex];
-    // TODO: check content
-    if (*pszContent >= '0' && *pszContent <= '9')
-      nResult = atoi(pszContent);
-  }
-
-  return nResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int ReadFieldMappings(const char *szFileName)
-{
-  int i, nMapIndex, nMapIndex2, nReturnCode;
-  char *pColumnName = NULL;
-  FieldMapping *pFieldMapping, *pFieldMapping2;
-  pchar aField[MAX_MAPPING_COLUMNS];
-  FILE *pFile = NULL;
-  errno_t error_code;
-  char szTemp[256];
-
-  // open csv file for input in binary mode (cr/lf are not changed)
-  error_code = fopen_s(&pFile, szFileName, "rb");
-  if (!pFile) {
-    sprintf(szLastError, "Cannot open mapping file '%s' (error code %d)", szFileName, error_code);
-    puts(szLastError);
-    return -2;
-  }
-
-  // get file size
-  //int fseek(FILE *stream, long offset, int whence);
-  int iReturnCode = fseek(pFile, 0, SEEK_END);
-  int nFileSize = ftell(pFile);
-
-  // allocate reading buffer
-  nFieldMappingBufferSize = nFileSize + 1;
-  pFieldMappingsBuffer = (char*)malloc(nFieldMappingBufferSize);
-
-  if (!pFieldMappingsBuffer) {
-    sprintf(szLastError, "Not enough memory for reading mapping file '%s' (%d bytes)", szFileName, nFileSize);
-    puts(szLastError);
-    return -1;  // not enough free memory
-  }
-
-  // clear read buffer
-  memset(pFieldMappingsBuffer, 0, nFieldMappingBufferSize);
-
-  // go to start of file
-  iReturnCode = fseek(pFile, 0, SEEK_SET);
-
-  // read file content
-  int nBytesRead = fread(pFieldMappingsBuffer, nFieldMappingBufferSize, 1, pFile);
-
-  // close file
-  fclose(pFile);
-
-  // initialize reading position
-  char *pReadPos = pFieldMappingsBuffer;
-
-  // get header line with column names
-  char *pLine = GetNextLine(&pReadPos);
-
-  // parse header line
-  int nColumns = GetFields(pLine, ';', aField, MAX_MAPPING_COLUMNS);
-  int nCsvOpIdx = -1;
-  int nCsvContentIdx = -1;
-  int nCsvContent2Idx = -1;
-  int nCsvShortNameIdx = -1;
-  int nCsvMoIdx = -1;
-  int nCsvTypeIdx = -1;
-  int nCsvMinLenIdx = -1;
-  int nCsvMaxLenIdx = -1;
-  int nCsvFormatIdx = -1;
-  int nCsvTransformIdx = -1;
-  int nCsvDefaultIdx = -1;
-  int nCsvConditionIdx = -1;
-  int nXmlOpIdx = -1;
-  int nXmlContentIdx = -1;
-  int nXmlContent2Idx = -1;
-  int nXmlAttributeIdx = -1;
-  int nXmlShortNameIdx = -1;
-  int nXmlMoIdx = -1;
-  int nXmlTypeIdx = -1;
-  int nXmlMinLenIdx = -1;
-  int nXmlMaxLenIdx = -1;
-  int nXmlFormatIdx = -1;
-  int nXmlTransformIdx = -1;
-  int nXmlDefaultIdx = -1;
-  int nXmlConditionIdx = -1;
-  pchar szCsvOperation = NULL;
-  pchar szXmlOperation = NULL;
-  FieldMappingContext MappingContext;
-
-  // find position of mapping columns
-  for (i = 0; i < nColumns; i++) {
-    pColumnName = aField[i];
-    // search for csv columns
-    if (strcmp(pColumnName, "CSV_OP") == 0) nCsvOpIdx = i;
-    if (strcmp(pColumnName, "CSV_CONTENT") == 0) nCsvContentIdx = i;
-    if (strcmp(pColumnName, "CSV_CONTENT2") == 0) nCsvContent2Idx = i;
-    if (strcmp(pColumnName, "CSV_SHORT_NAME") == 0) nCsvShortNameIdx = i;
-    if (strcmp(pColumnName, "CSV_MO") == 0) nCsvMoIdx = i;
-    if (strcmp(pColumnName, "CSV_TYPE") == 0) nCsvTypeIdx = i;
-    if (strcmp(pColumnName, "CSV_MIN_LEN") == 0) nCsvMinLenIdx = i;
-    if (strcmp(pColumnName, "CSV_MAX_LEN") == 0) nCsvMaxLenIdx = i;
-    if (strcmp(pColumnName, "CSV_FORMAT") == 0) nCsvFormatIdx = i;
-    if (strcmp(pColumnName, "CSV_TRANSFORM") == 0) nCsvTransformIdx = i;
-    if (strcmp(pColumnName, "CSV_DEFAULT") == 0) nCsvDefaultIdx = i;
-    if (strcmp(pColumnName, "CSV_CONDITION") == 0) nCsvConditionIdx = i;
-    // search for xml columns
-    if (strcmp(pColumnName, "XML_OP") == 0) nXmlOpIdx = i;
-    if (strcmp(pColumnName, "XML_CONTENT") == 0) nXmlContentIdx = i;
-    if (strcmp(pColumnName, "XML_CONTENT2") == 0) nXmlContent2Idx = i;
-    if (strcmp(pColumnName, "XML_ATTRIBUTE") == 0) nXmlAttributeIdx = i;
-    if (strcmp(pColumnName, "XML_SHORT_NAME") == 0) nXmlShortNameIdx = i;
-    if (strcmp(pColumnName, "XML_MO") == 0) nXmlMoIdx = i;
-    if (strcmp(pColumnName, "XML_TYPE") == 0) nXmlTypeIdx = i;
-    if (strcmp(pColumnName, "XML_MIN_LEN") == 0) nXmlMinLenIdx = i;
-    if (strcmp(pColumnName, "XML_MAX_LEN") == 0) nXmlMaxLenIdx = i;
-    if (strcmp(pColumnName, "XML_FORMAT") == 0) nXmlFormatIdx = i;
-    if (strcmp(pColumnName, "XML_TRANSFORM") == 0) nXmlTransformIdx = i;
-    if (strcmp(pColumnName, "XML_DEFAULT") == 0) nXmlDefaultIdx = i;
-    if (strcmp(pColumnName, "XML_CONDITION") == 0) nXmlConditionIdx = i;
-  }
-
-  if (nCsvOpIdx < 0 || nCsvContentIdx < 0 || nCsvTypeIdx < 0 || nXmlOpIdx < 0 || nXmlContentIdx < 0)
-    return -2;  // missing mandatory columns in mapping file
-
-  pFieldMapping = aFieldMapping;
-
-  // load field mapping definitions into mapping array
-  while (pLine = GetNextLine(&pReadPos)) {
-    nColumns = GetFields(pLine, ';', aField, MAX_MAPPING_COLUMNS);
-
-    // line with real content ?
-    if (*pLine != '#' /*Comment*/ && nColumns >= 4 && nFieldMappings < MAX_FIELD_MAPPINGS) {
-      nMapIndex = nFieldMappings;
-      MappingContext.aField = aField;
-      MappingContext.nFields = nColumns;
-      MappingContext.nMapIndex = nMapIndex;
-      MappingContext.pFieldMapping = pFieldMapping;
-
-      //pFieldMapping->csv = EmptyFieldDefinition;
-      MappingContext.pFieldDefinition = &pFieldMapping->csv;
-      pFieldMapping->csv.cOperation = LoadCharMappingField(&MappingContext, "CSV_OP", nCsvOpIdx, true, ",FIX,VAR,MAP,CHANGE,UNIQUE,IF,", 'M');
-      pFieldMapping->csv.szContent = LoadTextMappingField(&MappingContext, "CSV_CONTENT", nCsvContentIdx, NULL);
-      pFieldMapping->csv.szContent2 = LoadTextMappingField(&MappingContext, "CSV_CONTENT2", nCsvContent2Idx, NULL);
-      pFieldMapping->csv.szAttribute = NULL; // not used at the moment
-      pFieldMapping->csv.szShortName = LoadTextMappingField(&MappingContext, "CSV_SHORT_NAME", nCsvShortNameIdx, NULL);
-      pFieldMapping->csv.bMandatory = LoadBoolMappingField(&MappingContext, "CSV_MO", nCsvMoIdx, "M", "O", false);
-      pFieldMapping->csv.cType = LoadCharMappingField(&MappingContext, "CSV_TYPE", nCsvTypeIdx, true, ",BOOLEAN,DATE,DATETIME,INTEGER,NUMBER,TEXT,", 'T');
-      pFieldMapping->csv.nMinLen = LoadIntMappingField(&MappingContext, "CSV_MIN_LEN", nCsvMinLenIdx, 0);
-      pFieldMapping->csv.nMaxLen = LoadIntMappingField(&MappingContext, "CSV_MAX_LEN", nCsvMaxLenIdx, -1);
-      pFieldMapping->csv.szFormat = LoadTextMappingField(&MappingContext, "CSV_FORMAT", nCsvFormatIdx, NULL);
-      pFieldMapping->csv.szTransform = LoadTextMappingField(&MappingContext, "CSV_TRANSFORM", nCsvTransformIdx, NULL);
-      pFieldMapping->csv.szDefault = LoadTextMappingField(&MappingContext, "CSV_DEFAULT", nCsvDefaultIdx, NULL);
-      pFieldMapping->csv.szCondition = LoadTextMappingField(&MappingContext, "CSV_CONDITION", nCsvConditionIdx, NULL);
-
-      //pFieldMapping->xml = EmptyFieldDefinition;
-      MappingContext.pFieldDefinition = &pFieldMapping->xml;
-      pFieldMapping->xml.cOperation = LoadCharMappingField(&MappingContext, "XML_OP", nXmlOpIdx, true, ",FIX,VAR,MAP,LOOP,IF,", 0);
-      pFieldMapping->xml.szContent = LoadTextMappingField(&MappingContext, "XML_CONTENT", nXmlContentIdx, NULL);
-      pFieldMapping->xml.szContent2 = LoadTextMappingField(&MappingContext, "XML_CONTENT2", nXmlContent2Idx, NULL);
-      pFieldMapping->xml.szAttribute = LoadTextMappingField(&MappingContext, "XML_ATTRIBUTE", nXmlAttributeIdx, NULL);
-      pFieldMapping->xml.szShortName = LoadTextMappingField(&MappingContext, "XML_SHORT_NAME", nXmlShortNameIdx, NULL);
-      pFieldMapping->xml.bMandatory = LoadBoolMappingField(&MappingContext, "XML_MO", nXmlMoIdx, "M", "O", pFieldMapping->csv.bMandatory);
-      pFieldMapping->xml.bAddEmptyNodes = false;
-      pFieldMapping->xml.cType = LoadCharMappingField(&MappingContext, "XML_TYPE", nXmlTypeIdx, false, ",BOOLEAN,DATE,DATETIME,INTEGER,NUMBER,TEXT,", pFieldMapping->csv.cType);
-      pFieldMapping->xml.nMinLen = LoadIntMappingField(&MappingContext, "XML_MIN_LEN", nXmlMinLenIdx, pFieldMapping->csv.nMinLen);
-      pFieldMapping->xml.nMaxLen = LoadIntMappingField(&MappingContext, "XML_MAX_LEN", nXmlMaxLenIdx, pFieldMapping->csv.nMaxLen);
-      pFieldMapping->xml.szFormat = LoadTextMappingField(&MappingContext, "XML_FORMAT", nXmlFormatIdx, NULL);
-      pFieldMapping->xml.szTransform = LoadTextMappingField(&MappingContext, "XML_TRANSFORM", nXmlTransformIdx, NULL);
-      pFieldMapping->xml.szDefault = LoadTextMappingField(&MappingContext, "XML_DEFAULT", nXmlDefaultIdx, NULL);
-      pFieldMapping->xml.szCondition = LoadTextMappingField(&MappingContext, "XML_CONDITION", nXmlConditionIdx, NULL);
-      pFieldMapping->xml.Condition.pComplexCondition = NULL;
-      pFieldMapping->xml.Condition.pSimpleCondition = NULL;
-
-      if (pFieldMapping->csv.cOperation != 'F' && IsEmptyString(pFieldMapping->csv.szContent)) {
-        sprintf(szLastError, "Missing mandatory content");
-        LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->csv.cOperation), "CSV_CONTENT", szLastError);
-      }
-
-      if (pFieldMapping->xml.cOperation != 'F' && IsEmptyString(pFieldMapping->xml.szContent)) {
-        sprintf(szLastError, "Missing mandatory content");
-        LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->xml.cOperation), "XML_CONTENT", szLastError);
-      }
-
-      sprintf(szTemp, "%c%c", pFieldMapping->csv.cOperation, pFieldMapping->xml.cOperation);
-      if (!CheckRegex(szTemp, ",FM,MF,VM,MV,MM,CL,UL,II,")) {
-        sprintf(szLastError, "Invalid combination of csv and xml operation '%s'-'%s'", GetOperationLongName(pFieldMapping->csv.cOperation), GetOperationLongName(pFieldMapping->xml.cOperation));
-        LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->xml.cOperation), "XML_CONTENT", szLastError);
-      }
-
-      if (pFieldMapping->csv.cOperation == 'M' && pFieldMapping->xml.cOperation == 'M' && IsEmptyString(pFieldMapping->xml.szFormat) &&
-          strchr("BT", pFieldMapping->xml.cType) && pFieldMapping->csv.cType == pFieldMapping->xml.cType)
-        pFieldMapping->xml.szFormat = pFieldMapping->csv.szFormat;
-
-      if (!IsEmptyString(pFieldMapping->xml.szCondition)) {
-        nReturnCode = ParseCondition(pFieldMapping->xml.szCondition, &pFieldMapping->xml.Condition);
-        if (nReturnCode != 0) {
-          LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->xml.cOperation), "XML_CONDITION", szLastError);
-        }
-      }
-
-      pFieldMapping->nCsvIndex = -1;
-      pFieldMapping->nSourceMapIndex = -1;
-      pFieldMapping++;
-      nFieldMappings++;
-    }
-  }
-
-  // search for field content mapping of source columns
-  for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
-    if (strchr("CIU"/*CHANGE,IF,UNIQUE*/, pFieldMapping->csv.cOperation)) {
-      // search for content mapping of source column
-      for (nMapIndex2 = 0, pFieldMapping2 = aFieldMapping; nMapIndex2 < nFieldMappings; nMapIndex2++, pFieldMapping2++)
-        if (pFieldMapping2->csv.cOperation == 'M' && pFieldMapping2->xml.cOperation == 'M' && strcmp(pFieldMapping->csv.szContent, pFieldMapping2->csv.szContent) == 0) {
-          pFieldMapping->nSourceMapIndex = nMapIndex2;
-          nMapIndex2 = nFieldMappings;
-        }
-    }
-
-  if (nFieldMappings == 0) {
-    sprintf(szLastError, "No field mappings found in '%s'", szFileName);
-    puts(szLastError);
-  }
-
-  return nFieldMappings;
-}
-// end of function "ReadFieldMappings"
-
-//--------------------------------------------------------------------------------------------------------
-
-void FreeCsvFileBuffers()
-{
-  if (pCsvDataBuffer != NULL) {
-    free(pCsvDataBuffer);
-    pCsvDataBuffer = NULL;
-  }
-
-  if (aCsvDataFields != NULL) {
-    free(aCsvDataFields);
-    aCsvDataFields = NULL;
-  }
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool MatchingColumnName(cpchar pszColumnName, cpchar pszSearchColumnName)
-{
-  // Compares given csv column name with search pattern from mapping definition
-  // If search pattern contains asterics '*' at the end, then rest of the column name is ignored
-  // Sample: column name "3_Portfolio_name" is matching "3_*"
-  //
-  bool bMatch;
-
-  if (!pszColumnName || !*pszColumnName || !pszSearchColumnName || !*pszSearchColumnName)
-    return false;
-
-  int nPos = strlen(pszSearchColumnName) - 1;
-
-  if (nPos > 0 && pszSearchColumnName[nPos] == '*')
-    bMatch = (strnicmp(pszColumnName, pszSearchColumnName, nPos) == 0);
-  else
-    bMatch = (stricmp(pszColumnName, pszSearchColumnName) == 0);
-
-  return bMatch;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int ReadCsvData(const char *szFileName)
-{
-  int i, nColumnIndex, nMapIndex, nColumns, nNonEmptyColumns, nFound;
-  char *pColumnName = NULL;
-  char szErrorMessage[MAX_ERROR_MESSAGE_SIZE];
-  char szTempHeader[MAX_HEADER_SIZE];
-  cpchar szIgnoreXPath = NULL;
-  pchar aField[MAX_CSV_COLUMNS];
-  FieldMapping *pFieldMapping = NULL;
-  FILE *pFile = NULL;
-  errno_t error_code;
-  bool bCheck, bFound;
-
-  // initialize number of columns and csv data lines
-  nCsvDataColumns = 0;
-  nRealCsvDataLines = 0;
-
-  // open csv file for input in binary mode (cr/lf are not changed)
-  error_code = fopen_s(&pFile, szFileName, "rb");
-  if (!pFile) {
-    sprintf(szLastError, "Cannot open input file '%s' (error code %d)", szFileName, error_code);
-    puts(szLastError);
-    return -2;
-  }
-
-  // get file size
-  //int fseek(FILE *stream, long offset, int whence);
-  int iReturnCode = fseek(pFile, 0, SEEK_END);
-  int nFileSize = ftell(pFile);
-
-  // allocate reading buffer
-  nCsvDataBufferSize = nFileSize + 1;
-  pCsvDataBuffer = (char*)malloc(nCsvDataBufferSize);
-
-  if (!pCsvDataBuffer) {
-    sprintf(szLastError, "Not enough memory for reading input file '%s' (%d bytes)", szFileName, nFileSize);
-    puts(szLastError);
-    return -1;  // not enough free memory
-  }
-
-  // clear read buffer
-  memset(pCsvDataBuffer, 0, nCsvDataBufferSize);
-
-  // go to start of file
-  iReturnCode = fseek(pFile, 0, SEEK_SET);
-
-  // read content of file
-  memset(pCsvDataBuffer, 0, nCsvDataBufferSize);
-  int nBytesRead = fread(pCsvDataBuffer, nCsvDataBufferSize, 1, pFile);
-  //int nContentLength = strlen(pCsvDataBuffer);
-  //pchar pTest = pCsvDataBuffer + nCsvDataBufferSize - 8;
-
-  // close file
-  fclose(pFile);
-
-  // initialize reading position
-  char *pReadPos = pCsvDataBuffer;
-
-  // get header line with column names
-  char *pLine = GetNextLine(&pReadPos);
-  if (!pLine || *pLine <= '\n') {
-    sprintf(szLastError, "Missing or empty header line in input file '%s'", szFileName);
-    puts(szLastError);
-    return -2;
-  }
-
-  // save header line
-  mystrncpy(szCsvHeader, pLine, MAX_HEADER_SIZE);
-  *szCsvHeader2 = '\0';
-
-  // detect column delimiter
-  cColumnDelimiter = GetColumnDelimiter(pLine);
-
-  // set list of characters to be ignored when parsing the csv line (outside of quoted values)
-  strcpy(szIgnoreChars, (cColumnDelimiter == '\t') ? " " : " \t");
-
-  // reset field indices
-  pFieldMapping = aFieldMapping;
-	for (int i = 0; i < nFieldMappings; i++, pFieldMapping++) 
-    pFieldMapping->nCsvIndex = -1;
-
-  // parse header line
-  nCsvDataColumns = GetFields(pLine, cColumnDelimiter, aField, MAX_CSV_COLUMNS);
-
-  // search for fields referenced by the mapping definition
-  pFieldMapping = aFieldMapping;
-  for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++) {
-    pFieldMapping->nCsvIndex = -1;
-
-    if (strchr("CIMU"/*CHANGE,IF,MAP,UNIQUE*/, pFieldMapping->csv.cOperation)) {
-      //if (strcmp(pFieldMapping->csv.szContent2, "67_*") == 0)
-      //  i = 0;  // ColumnIndex = 68; for debugging purposes only!
-
-      // search for column in csv header
-      for (nColumnIndex = 0; nColumnIndex < nCsvDataColumns; nColumnIndex++)
-        if (MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent) || MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent2)) {
-          pFieldMapping->nCsvIndex = nColumnIndex;
-          break;
-        }
-
-      // within conditional block ?
-      bCheck = true;
-      if (szIgnoreXPath) {
-        if (strncmp(pFieldMapping->xml.szContent, szIgnoreXPath, strlen(szIgnoreXPath)) == 0)
-          bCheck = false;  // yes, still within conditional block to be skipped
-        else
-          szIgnoreXPath = NULL;  // no, end of conditional block reached
-      }
-
-      // mandatory column missing in header line ?
-      if (bCheck && pFieldMapping->nCsvIndex < 0 && pFieldMapping->csv.bMandatory) {
-        sprintf(szErrorMessage, "Cannot find mandatory column in input file header");
-        LogCsvError(1, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, szEmptyString, szErrorMessage);
-      }
-
-      // start of new IF block ?
-      if (!szIgnoreXPath && pFieldMapping->csv.cOperation == 'I')
-        szIgnoreXPath = pFieldMapping->xml.szContent;
-    }
-  }
-
-  // count number of lines
-  nCsvDataLines = 1;
-  char *pc = pReadPos;
-  while (*pc)
-    if (*pc++ == '\n')
-      nCsvDataLines++;
-
-  // allocate memory for field pointer array
-  nCsvDataFieldsBufferSize = nCsvDataLines * nCsvDataColumns * sizeof(pchar);
-  aCsvDataFields = (pchar*)malloc(nCsvDataFieldsBufferSize);
-
-  if (!aCsvDataFields) {
-    sprintf(szLastError, "Not enough memory for csv content field buffer input file '%s' (%d bytes for %d lines and %d columns)", szFileName, nCsvDataFieldsBufferSize, nCsvDataLines, nCsvDataColumns);
-    puts(szLastError);
-    return -1;  // not enough free memory
-  }
-
-  // initialize flags whether csv values has been quoted or not
-  for (i = 0; i < nCsvDataColumns; i++)
-    abColumnQuoted[i] = false;
-
-  // clear field pointer array
-  memset(aCsvDataFields, 0, nCsvDataFieldsBufferSize);
-
-  pchar *pCsvDataFields = aCsvDataFields;
-
-  while (pLine = GetNextLine(&pReadPos)) {
-    //if (nRealCsvDataLines >= 761)
-    //  i = 0;  // for debugging purposes only!
-
-    if (nRealCsvDataLines == 0 && !*szCsvHeader2)
-      mystrncpy(szTempHeader, pLine, MAX_HEADER_SIZE);
-
-    // parse current csv line
-    nColumns = GetFields(pLine, cColumnDelimiter, aField, nCsvDataColumns, (nRealCsvDataLines == 0) ? abColumnQuoted : NULL);
-
-    // count non-empty columns
-    nNonEmptyColumns = 0;
-    for (i = 0; i < nColumns; i++)
-      if (*aField[i])
-        nNonEmptyColumns++;
-
-    if (nNonEmptyColumns >= 3 && nRealCsvDataLines == 0 && !*szCsvHeader2) {
-      // check existance of second header line
-      nFound = 0;
-
-      for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++) {
-        bFound = false;
-
-        if (strchr("CIMU"/*CHANGE,IF,MAP,UNIQUE*/, pFieldMapping->csv.cOperation)) {
-          // search for column name in potential csv header
-          for (nColumnIndex = 0; nColumnIndex < nColumns && !bFound; nColumnIndex++)
-            if (MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent) || MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent2)) {
-              bFound = true;
-              nFound++;
-            }
-        }
-      }
-
-      if (nFound >= nCsvDataColumns / 2) {
-        // save second header line, if minimum half of the columns is matching column names
-        mystrncpy(szCsvHeader2, szTempHeader, MAX_HEADER_SIZE);
-        nNonEmptyColumns = 0;
       }
     }
 
-    if (nNonEmptyColumns >= 3 && nRealCsvDataLines < nCsvDataLines) {
-      // copy pointer of fields content to field pointer array
-      memcpy(pCsvDataFields, aField, nColumns * sizeof(pchar));
-      // initialize non existing fields at the end of the line with empty strings
-      for (i = nColumns; i < nCsvDataColumns; i++)
-        pCsvDataFields[i] = (pchar)szEmptyString;
-      // next line
-      pCsvDataFields += nCsvDataColumns;
-      nRealCsvDataLines++;
-    }
+    return bResult;
   }
 
-  return nFieldMappings;
-}
-// end of function "ReadCsvData"
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  char LoadCharMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, bool bMandatory, cpchar pszValidContent, char cDefault)
+  {
+    char cResult = cDefault;
+    pchar pszContent = NULL;
 
-cpchar GetCsvFieldValue(int nCsvDataLine, int nCsvColumn)
-{
-  cpchar pResult = NULL;
-
-  if (nCsvDataLine >= 0 && nCsvDataLine < nRealCsvDataLines && nCsvColumn >= 0 && nCsvColumn < nCsvDataColumns)
-    pResult = aCsvDataFields[nCsvDataLine * nCsvDataColumns + nCsvColumn];
-
-  return pResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool IsNewCsvFieldValue(int nCsvDataLines, int nCsvColumn, cpchar szCsvValue)
-{
-  bool bResult = false;
-
-  if (nCsvDataLines >= 0 && nCsvDataLines < nRealCsvDataLines && nCsvColumn >= 0 && nCsvColumn < nCsvDataColumns) {
-    bResult = true;
-    cpchar *ppCsvValue = (cpchar*)(aCsvDataFields + nCsvColumn);
-    for (int i = 0; i < nCsvDataLines; i++) {
-      if (strcmp(szCsvValue, *ppCsvValue) == 0)
-        return false;
-      ppCsvValue += nCsvDataColumns;
-    }
-  }
-
-  return bResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int GetNumberOfDigits(cpchar szValue)
-{
-  int nResult = 0;
-
-  for (cpchar pPos = szValue; *pPos >= '0' && *pPos <= '9'; pPos++)
-    nResult++;
-
-  return nResult;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int GetCsvDecimalPoint()
-{
-  int i, nColumnIndex, nMapIndex, nDigitsBehindComma, nDigitsBehindPoint;
-  int nCommaUsage = 0;
-  int nPointUsage = 0;
-  int nReturnCode = 0;
-  pchar *ppCsvDataField;
-  cpchar pCsvFieldValue = NULL;
-  cpchar pCommaPos = NULL;
-  cpchar pPointPos = NULL;
-  CPFieldMapping pFieldMapping = aFieldMapping;
-
-  for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++) {
-    if (pFieldMapping->csv.cType == 'N'/*NUMBER*/ && pFieldMapping->csv.cOperation == 'M'/*MAP*/ && pFieldMapping->nCsvIndex >= 0)
+    if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields)
     {
-      nColumnIndex = pFieldMapping->nCsvIndex;
-      ppCsvDataField = aCsvDataFields + nColumnIndex;
-
-      for (i = 0; i < nRealCsvDataLines; i++) {
-        pCsvFieldValue = *ppCsvDataField;
-        //pCsvFieldValue = GetCsvFieldValue(i, nColumnIndex);
-
-        pCommaPos = strchr(pCsvFieldValue, ',');
-        if (pCommaPos)
-          nDigitsBehindComma = GetNumberOfDigits(pCommaPos+1);
-        else
-          nDigitsBehindComma = -1;
-
-        pPointPos = strchr(pCsvFieldValue, '.');
-        if (pPointPos)
-          nDigitsBehindPoint = GetNumberOfDigits(pPointPos+1);
-        else
-          nDigitsBehindPoint = -1;
-
-        if (pCommaPos) {
-          if (pPointPos) {
-            if (pCommaPos > pPointPos)
-              nCommaUsage++;  // comma is behind point
-            else
-              nPointUsage++;  // point is behind comma
-          }
-          else
-            if (nDigitsBehindComma != 3)
-              nCommaUsage++;  // high probability of comma used as decimal point
-        }
-        else {
-          if (pPointPos && nDigitsBehindPoint != 3)
-            nPointUsage++;  // high probability of point used as decimal point
-        }
-
-        // increment data field pointer to next csv line
-        ppCsvDataField += nCsvDataColumns;
+      pszContent = pContext->aField[nFieldIndex];
+      // check content
+      if ((!IsEmptyString(pszValidContent) || bMandatory) && !CheckRegex(pszContent, pszValidContent))
+      {
+        sprintf(szLastError, "Invalid content '%s' (not in '%s')", pszContent, pszValidContent + 1);
+        LogMappingError(pContext->nMapIndex, GetOperationLongName(pContext->pFieldDefinition->cOperation), pszFieldName, szLastError);
       }
+      else
+        cResult = toupper(*pszContent);
+    }
+
+    return cResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int LoadIntMappingField(FieldMappingContext const *pContext, cpchar pszFieldName, int nFieldIndex, int nDefault)
+  {
+    int nResult = nDefault;
+    pchar pszContent = NULL;
+
+    if (nFieldIndex >= 0 && nFieldIndex < pContext->nFields)
+    {
+      pszContent = pContext->aField[nFieldIndex];
+      // TODO: check content
+      if (*pszContent >= '0' && *pszContent <= '9')
+        nResult = atoi(pszContent);
+    }
+
+    return nResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int ReadFieldMappings(const char *szFileName)
+  {
+    int i, nMapIndex, nMapIndex2, nReturnCode;
+    char *pColumnName = NULL;
+    FieldMapping *pFieldMapping, *pFieldMapping2;
+    pchar aField[MAX_MAPPING_COLUMNS];
+    FILE *pFile = NULL;
+    errno_t error_code;
+    char szTemp[256];
+
+    // open csv file for input in binary mode (cr/lf are not changed)
+    error_code = fopen_s(&pFile, szFileName, "rb");
+    if (!pFile)
+    {
+      sprintf(szLastError, "Cannot open mapping file '%s' (error code %d)", szFileName, error_code);
+      puts(szLastError);
+      return -2;
+    }
+
+    // get file size
+    //int fseek(FILE *stream, long offset, int whence);
+    int iReturnCode = fseek(pFile, 0, SEEK_END);
+    int nFileSize = ftell(pFile);
+
+    // allocate reading buffer
+    nFieldMappingBufferSize = nFileSize + 1;
+    pFieldMappingsBuffer = (char *)malloc(nFieldMappingBufferSize);
+
+    if (!pFieldMappingsBuffer)
+    {
+      sprintf(szLastError, "Not enough memory for reading mapping file '%s' (%d bytes)", szFileName, nFileSize);
+      puts(szLastError);
+      return -1; // not enough free memory
+    }
+
+    // clear read buffer
+    memset(pFieldMappingsBuffer, 0, nFieldMappingBufferSize);
+
+    // go to start of file
+    iReturnCode = fseek(pFile, 0, SEEK_SET);
+
+    // read file content
+    int nBytesRead = fread(pFieldMappingsBuffer, nFieldMappingBufferSize, 1, pFile);
+
+    // close file
+    fclose(pFile);
+
+    // initialize reading position
+    char *pReadPos = pFieldMappingsBuffer;
+
+    // get header line with column names
+    char *pLine = GetNextLine(&pReadPos);
+
+    // parse header line
+    int nColumns = GetFields(pLine, ';', aField, MAX_MAPPING_COLUMNS);
+    int nCsvOpIdx = -1;
+    int nCsvContentIdx = -1;
+    int nCsvContent2Idx = -1;
+    int nCsvShortNameIdx = -1;
+    int nCsvMoIdx = -1;
+    int nCsvTypeIdx = -1;
+    int nCsvMinLenIdx = -1;
+    int nCsvMaxLenIdx = -1;
+    int nCsvFormatIdx = -1;
+    int nCsvTransformIdx = -1;
+    int nCsvDefaultIdx = -1;
+    int nCsvConditionIdx = -1;
+    int nXmlOpIdx = -1;
+    int nXmlContentIdx = -1;
+    int nXmlContent2Idx = -1;
+    int nXmlAttributeIdx = -1;
+    int nXmlShortNameIdx = -1;
+    int nXmlMoIdx = -1;
+    int nXmlTypeIdx = -1;
+    int nXmlMinLenIdx = -1;
+    int nXmlMaxLenIdx = -1;
+    int nXmlFormatIdx = -1;
+    int nXmlTransformIdx = -1;
+    int nXmlDefaultIdx = -1;
+    int nXmlConditionIdx = -1;
+    pchar szCsvOperation = NULL;
+    pchar szXmlOperation = NULL;
+    FieldMappingContext MappingContext;
+
+    // find position of mapping columns
+    for (i = 0; i < nColumns; i++)
+    {
+      pColumnName = aField[i];
+      // search for csv columns
+      if (strcmp(pColumnName, "CSV_OP") == 0)
+        nCsvOpIdx = i;
+      if (strcmp(pColumnName, "CSV_CONTENT") == 0)
+        nCsvContentIdx = i;
+      if (strcmp(pColumnName, "CSV_CONTENT2") == 0)
+        nCsvContent2Idx = i;
+      if (strcmp(pColumnName, "CSV_SHORT_NAME") == 0)
+        nCsvShortNameIdx = i;
+      if (strcmp(pColumnName, "CSV_MO") == 0)
+        nCsvMoIdx = i;
+      if (strcmp(pColumnName, "CSV_TYPE") == 0)
+        nCsvTypeIdx = i;
+      if (strcmp(pColumnName, "CSV_MIN_LEN") == 0)
+        nCsvMinLenIdx = i;
+      if (strcmp(pColumnName, "CSV_MAX_LEN") == 0)
+        nCsvMaxLenIdx = i;
+      if (strcmp(pColumnName, "CSV_FORMAT") == 0)
+        nCsvFormatIdx = i;
+      if (strcmp(pColumnName, "CSV_TRANSFORM") == 0)
+        nCsvTransformIdx = i;
+      if (strcmp(pColumnName, "CSV_DEFAULT") == 0)
+        nCsvDefaultIdx = i;
+      if (strcmp(pColumnName, "CSV_CONDITION") == 0)
+        nCsvConditionIdx = i;
+      // search for xml columns
+      if (strcmp(pColumnName, "XML_OP") == 0)
+        nXmlOpIdx = i;
+      if (strcmp(pColumnName, "XML_CONTENT") == 0)
+        nXmlContentIdx = i;
+      if (strcmp(pColumnName, "XML_CONTENT2") == 0)
+        nXmlContent2Idx = i;
+      if (strcmp(pColumnName, "XML_ATTRIBUTE") == 0)
+        nXmlAttributeIdx = i;
+      if (strcmp(pColumnName, "XML_SHORT_NAME") == 0)
+        nXmlShortNameIdx = i;
+      if (strcmp(pColumnName, "XML_MO") == 0)
+        nXmlMoIdx = i;
+      if (strcmp(pColumnName, "XML_TYPE") == 0)
+        nXmlTypeIdx = i;
+      if (strcmp(pColumnName, "XML_MIN_LEN") == 0)
+        nXmlMinLenIdx = i;
+      if (strcmp(pColumnName, "XML_MAX_LEN") == 0)
+        nXmlMaxLenIdx = i;
+      if (strcmp(pColumnName, "XML_FORMAT") == 0)
+        nXmlFormatIdx = i;
+      if (strcmp(pColumnName, "XML_TRANSFORM") == 0)
+        nXmlTransformIdx = i;
+      if (strcmp(pColumnName, "XML_DEFAULT") == 0)
+        nXmlDefaultIdx = i;
+      if (strcmp(pColumnName, "XML_CONDITION") == 0)
+        nXmlConditionIdx = i;
+    }
+
+    if (nCsvOpIdx < 0 || nCsvContentIdx < 0 || nCsvTypeIdx < 0 || nXmlOpIdx < 0 || nXmlContentIdx < 0)
+      return -2; // missing mandatory columns in mapping file
+
+    pFieldMapping = aFieldMapping;
+
+    // load field mapping definitions into mapping array
+    while (pLine = GetNextLine(&pReadPos))
+    {
+      nColumns = GetFields(pLine, ';', aField, MAX_MAPPING_COLUMNS);
+
+      // line with real content ?
+      if (*pLine != '#' /*Comment*/ && nColumns >= 4 && nFieldMappings < MAX_FIELD_MAPPINGS)
+      {
+        nMapIndex = nFieldMappings;
+        MappingContext.aField = aField;
+        MappingContext.nFields = nColumns;
+        MappingContext.nMapIndex = nMapIndex;
+        MappingContext.pFieldMapping = pFieldMapping;
+
+        //pFieldMapping->csv = EmptyFieldDefinition;
+        MappingContext.pFieldDefinition = &pFieldMapping->csv;
+        pFieldMapping->csv.cOperation = LoadCharMappingField(&MappingContext, "CSV_OP", nCsvOpIdx, true, ",FIX,VAR,MAP,CHANGE,UNIQUE,IF,", 'M');
+        pFieldMapping->csv.szContent = LoadTextMappingField(&MappingContext, "CSV_CONTENT", nCsvContentIdx, NULL);
+        pFieldMapping->csv.szContent2 = LoadTextMappingField(&MappingContext, "CSV_CONTENT2", nCsvContent2Idx, NULL);
+        pFieldMapping->csv.szAttribute = NULL; // not used at the moment
+        pFieldMapping->csv.szShortName = LoadTextMappingField(&MappingContext, "CSV_SHORT_NAME", nCsvShortNameIdx, NULL);
+        pFieldMapping->csv.bMandatory = LoadBoolMappingField(&MappingContext, "CSV_MO", nCsvMoIdx, "M", "O", false);
+        pFieldMapping->csv.cType = LoadCharMappingField(&MappingContext, "CSV_TYPE", nCsvTypeIdx, true, ",BOOLEAN,DATE,DATETIME,INTEGER,NUMBER,TEXT,", 'T');
+        pFieldMapping->csv.nMinLen = LoadIntMappingField(&MappingContext, "CSV_MIN_LEN", nCsvMinLenIdx, 0);
+        pFieldMapping->csv.nMaxLen = LoadIntMappingField(&MappingContext, "CSV_MAX_LEN", nCsvMaxLenIdx, -1);
+        pFieldMapping->csv.szFormat = LoadTextMappingField(&MappingContext, "CSV_FORMAT", nCsvFormatIdx, NULL);
+        pFieldMapping->csv.szTransform = LoadTextMappingField(&MappingContext, "CSV_TRANSFORM", nCsvTransformIdx, NULL);
+        pFieldMapping->csv.szDefault = LoadTextMappingField(&MappingContext, "CSV_DEFAULT", nCsvDefaultIdx, NULL);
+        pFieldMapping->csv.szCondition = LoadTextMappingField(&MappingContext, "CSV_CONDITION", nCsvConditionIdx, NULL);
+
+        //pFieldMapping->xml = EmptyFieldDefinition;
+        MappingContext.pFieldDefinition = &pFieldMapping->xml;
+        pFieldMapping->xml.cOperation = LoadCharMappingField(&MappingContext, "XML_OP", nXmlOpIdx, true, ",FIX,VAR,MAP,LOOP,IF,", 0);
+        pFieldMapping->xml.szContent = LoadTextMappingField(&MappingContext, "XML_CONTENT", nXmlContentIdx, NULL);
+        pFieldMapping->xml.szContent2 = LoadTextMappingField(&MappingContext, "XML_CONTENT2", nXmlContent2Idx, NULL);
+        pFieldMapping->xml.szAttribute = LoadTextMappingField(&MappingContext, "XML_ATTRIBUTE", nXmlAttributeIdx, NULL);
+        pFieldMapping->xml.szShortName = LoadTextMappingField(&MappingContext, "XML_SHORT_NAME", nXmlShortNameIdx, NULL);
+        pFieldMapping->xml.bMandatory = LoadBoolMappingField(&MappingContext, "XML_MO", nXmlMoIdx, "M", "O", pFieldMapping->csv.bMandatory);
+        pFieldMapping->xml.bAddEmptyNodes = false;
+        pFieldMapping->xml.cType = LoadCharMappingField(&MappingContext, "XML_TYPE", nXmlTypeIdx, false, ",BOOLEAN,DATE,DATETIME,INTEGER,NUMBER,TEXT,", pFieldMapping->csv.cType);
+        pFieldMapping->xml.nMinLen = LoadIntMappingField(&MappingContext, "XML_MIN_LEN", nXmlMinLenIdx, pFieldMapping->csv.nMinLen);
+        pFieldMapping->xml.nMaxLen = LoadIntMappingField(&MappingContext, "XML_MAX_LEN", nXmlMaxLenIdx, pFieldMapping->csv.nMaxLen);
+        pFieldMapping->xml.szFormat = LoadTextMappingField(&MappingContext, "XML_FORMAT", nXmlFormatIdx, NULL);
+        pFieldMapping->xml.szTransform = LoadTextMappingField(&MappingContext, "XML_TRANSFORM", nXmlTransformIdx, NULL);
+        pFieldMapping->xml.szDefault = LoadTextMappingField(&MappingContext, "XML_DEFAULT", nXmlDefaultIdx, NULL);
+        pFieldMapping->xml.szCondition = LoadTextMappingField(&MappingContext, "XML_CONDITION", nXmlConditionIdx, NULL);
+        pFieldMapping->xml.Condition.pComplexCondition = NULL;
+        pFieldMapping->xml.Condition.pSimpleCondition = NULL;
+
+        if (pFieldMapping->csv.cOperation != 'F' && IsEmptyString(pFieldMapping->csv.szContent))
+        {
+          sprintf(szLastError, "Missing mandatory content");
+          LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->csv.cOperation), "CSV_CONTENT", szLastError);
+        }
+
+        if (pFieldMapping->xml.cOperation != 'F' && IsEmptyString(pFieldMapping->xml.szContent))
+        {
+          sprintf(szLastError, "Missing mandatory content");
+          LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->xml.cOperation), "XML_CONTENT", szLastError);
+        }
+
+        sprintf(szTemp, "%c%c", pFieldMapping->csv.cOperation, pFieldMapping->xml.cOperation);
+        if (!CheckRegex(szTemp, ",FM,MF,VM,MV,MM,CL,UL,II,"))
+        {
+          sprintf(szLastError, "Invalid combination of csv and xml operation '%s'-'%s'", GetOperationLongName(pFieldMapping->csv.cOperation), GetOperationLongName(pFieldMapping->xml.cOperation));
+          LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->xml.cOperation), "XML_CONTENT", szLastError);
+        }
+
+        if (pFieldMapping->csv.cOperation == 'M' && pFieldMapping->xml.cOperation == 'M' && IsEmptyString(pFieldMapping->xml.szFormat) &&
+            strchr("BT", pFieldMapping->xml.cType) && pFieldMapping->csv.cType == pFieldMapping->xml.cType)
+          pFieldMapping->xml.szFormat = pFieldMapping->csv.szFormat;
+
+        if (!IsEmptyString(pFieldMapping->xml.szCondition))
+        {
+          nReturnCode = ParseCondition(pFieldMapping->xml.szCondition, &pFieldMapping->xml.Condition);
+          if (nReturnCode != 0)
+          {
+            LogMappingError(nMapIndex, GetOperationLongName(pFieldMapping->xml.cOperation), "XML_CONDITION", szLastError);
+          }
+        }
+
+        pFieldMapping->nCsvIndex = -1;
+        pFieldMapping->nSourceMapIndex = -1;
+        pFieldMapping++;
+        nFieldMappings++;
+      }
+    }
+
+    // search for field content mapping of source columns
+    for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+      if (strchr("CIU" /*CHANGE,IF,UNIQUE*/, pFieldMapping->csv.cOperation))
+      {
+        // search for content mapping of source column
+        for (nMapIndex2 = 0, pFieldMapping2 = aFieldMapping; nMapIndex2 < nFieldMappings; nMapIndex2++, pFieldMapping2++)
+          if (pFieldMapping2->csv.cOperation == 'M' && pFieldMapping2->xml.cOperation == 'M' && strcmp(pFieldMapping->csv.szContent, pFieldMapping2->csv.szContent) == 0)
+          {
+            pFieldMapping->nSourceMapIndex = nMapIndex2;
+            nMapIndex2 = nFieldMappings;
+          }
+      }
+
+    if (nFieldMappings == 0)
+    {
+      sprintf(szLastError, "No field mappings found in '%s'", szFileName);
+      puts(szLastError);
+    }
+
+    return nFieldMappings;
+  }
+  // end of function "ReadFieldMappings"
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void FreeCsvFileBuffers()
+  {
+    if (pCsvDataBuffer != NULL)
+    {
+      free(pCsvDataBuffer);
+      pCsvDataBuffer = NULL;
+    }
+
+    if (aCsvDataFields != NULL)
+    {
+      free(aCsvDataFields);
+      aCsvDataFields = NULL;
     }
   }
 
-  cDecimalPoint = (nCommaUsage > nPointUsage) ? ',' : '.';
-  return nReturnCode;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  bool MatchingColumnName(cpchar pszColumnName, cpchar pszSearchColumnName)
+  {
+    // Compares given csv column name with search pattern from mapping definition
+    // If search pattern contains asterics '*' at the end, then rest of the column name is ignored
+    // Sample: column name "3_Portfolio_name" is matching "3_*"
+    //
+    bool bMatch;
 
-int GetColumnIndex(cpchar szColumnName)
-{
-  int nMapIndex;
-  CPFieldMapping pFieldMapping;
+    if (!pszColumnName || !*pszColumnName || !pszSearchColumnName || !*pszSearchColumnName)
+      return false;
 
-  // loop over all mapping fields
-  for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
-    if (pFieldMapping->csv.cOperation == 'M' && (stricmp(szColumnName, pFieldMapping->csv.szContent) == 0 || stricmp(szColumnName, pFieldMapping->csv.szContent2) == 0))
-      return pFieldMapping->nCsvIndex;
+    int nPos = strlen(pszSearchColumnName) - 1;
 
-  return -1;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-bool CheckCsvCondition(int nCsvDataLine, CPFieldMapping pFieldMapping)
-{
-  char szCondition[MAX_CONDITION_SIZE];
-  pchar pszLeftPart, pszOperator, pszRightPart;
-  cpchar pszFieldValue, pszLeftValue, pszRightValue;
-  int len, nLeftColumnIndex, nRightColumnIndex;
-  bool bMatch = false;
-
-  if (stricmp(pFieldMapping->csv.szCondition, "contentisvalid()") == 0) {
-    // get content of csv field
-    pszFieldValue = GetCsvFieldValue(nCsvDataLine, pFieldMapping->nCsvIndex);
-
-    // check content of csv field
-    if (pFieldMapping->csv.cType == 'N' /*NUMBER*/)
-      bMatch = IsValidNumber(pszFieldValue, cDecimalPoint);
-
-    if (pFieldMapping->csv.cType == 'T' /*TEXT*/)
-      bMatch = IsValidText(pszFieldValue, pFieldMapping);
+    if (nPos > 0 && pszSearchColumnName[nPos] == '*')
+      bMatch = (strnicmp(pszColumnName, pszSearchColumnName, nPos) == 0);
+    else
+      bMatch = (stricmp(pszColumnName, pszSearchColumnName) == 0);
 
     return bMatch;
   }
 
-  // condition likes "CCY != FUND_CCY" or "48_* = '1'" ?
-  OldParseCondition(pFieldMapping->csv.szCondition, szCondition, &pszLeftPart, &pszOperator, &pszRightPart);
+  //--------------------------------------------------------------------------------------------------------
 
-  if (pszLeftPart && pszOperator && pszRightPart) {
-    // condition found
-    nLeftColumnIndex = GetColumnIndex(pszLeftPart);
-    pszLeftValue = GetCsvFieldValue(nCsvDataLine, nLeftColumnIndex);
+  int ReadCsvData(const char *szFileName)
+  {
+    int i, nColumnIndex, nMapIndex, nColumns, nNonEmptyColumns, nFound;
+    char *pColumnName = NULL;
+    char szErrorMessage[MAX_ERROR_MESSAGE_SIZE];
+    char szTempHeader[MAX_HEADER_SIZE];
+    cpchar szIgnoreXPath = NULL;
+    pchar aField[MAX_CSV_COLUMNS];
+    FieldMapping *pFieldMapping = NULL;
+    FILE *pFile = NULL;
+    errno_t error_code;
+    bool bCheck, bFound;
 
-    if (*pszRightPart == '\'') {
-      pszRightValue = pszRightPart + 1;
-      len = strlen(pszRightPart);
-      if (len > 0 && pszRightPart[len-1] == '\'')
-        pszRightPart[len-1] = '\0';
-    }
-    else {
-      nRightColumnIndex = GetColumnIndex(pszRightPart);
-      pszRightValue = GetCsvFieldValue(nCsvDataLine, nRightColumnIndex);
+    // initialize number of columns and csv data lines
+    nCsvDataColumns = 0;
+    nRealCsvDataLines = 0;
+
+    // open csv file for input in binary mode (cr/lf are not changed)
+    error_code = fopen_s(&pFile, szFileName, "rb");
+    if (!pFile)
+    {
+      sprintf(szLastError, "Cannot open input file '%s' (error code %d)", szFileName, error_code);
+      puts(szLastError);
+      return -2;
     }
 
-    if (pszLeftValue && pszRightValue) {
-      if (*pszOperator == '=')
-        bMatch = (strcmp(pszLeftValue, pszRightValue) == 0);
-      if (*pszOperator == '!')
-        bMatch = (strcmp(pszLeftValue, pszRightValue) != 0);
-      if (*pszOperator == '<')
-        bMatch = (strcmp(pszLeftValue, pszRightValue) < 0);
-      if (*pszOperator == '>')
-        bMatch = (strcmp(pszLeftValue, pszRightValue) > 0);
+    // get file size
+    //int fseek(FILE *stream, long offset, int whence);
+    int iReturnCode = fseek(pFile, 0, SEEK_END);
+    int nFileSize = ftell(pFile);
+
+    // allocate reading buffer
+    nCsvDataBufferSize = nFileSize + 1;
+    pCsvDataBuffer = (char *)malloc(nCsvDataBufferSize);
+
+    if (!pCsvDataBuffer)
+    {
+      sprintf(szLastError, "Not enough memory for reading input file '%s' (%d bytes)", szFileName, nFileSize);
+      puts(szLastError);
+      return -1; // not enough free memory
     }
+
+    // clear read buffer
+    memset(pCsvDataBuffer, 0, nCsvDataBufferSize);
+
+    // go to start of file
+    iReturnCode = fseek(pFile, 0, SEEK_SET);
+
+    // read content of file
+    memset(pCsvDataBuffer, 0, nCsvDataBufferSize);
+    int nBytesRead = fread(pCsvDataBuffer, nCsvDataBufferSize, 1, pFile);
+    //int nContentLength = strlen(pCsvDataBuffer);
+    //pchar pTest = pCsvDataBuffer + nCsvDataBufferSize - 8;
+
+    // close file
+    fclose(pFile);
+
+    // initialize reading position
+    char *pReadPos = pCsvDataBuffer;
+
+    // get header line with column names
+    char *pLine = GetNextLine(&pReadPos);
+    if (!pLine || *pLine <= '\n')
+    {
+      sprintf(szLastError, "Missing or empty header line in input file '%s'", szFileName);
+      puts(szLastError);
+      return -2;
+    }
+
+    // save header line
+    mystrncpy(szCsvHeader, pLine, MAX_HEADER_SIZE);
+    *szCsvHeader2 = '\0';
+
+    // detect column delimiter
+    cColumnDelimiter = GetColumnDelimiter(pLine);
+
+    // set list of characters to be ignored when parsing the csv line (outside of quoted values)
+    strcpy(szIgnoreChars, (cColumnDelimiter == '\t') ? " " : " \t");
+
+    // reset field indices
+    pFieldMapping = aFieldMapping;
+    for (int i = 0; i < nFieldMappings; i++, pFieldMapping++)
+      pFieldMapping->nCsvIndex = -1;
+
+    // parse header line
+    nCsvDataColumns = GetFields(pLine, cColumnDelimiter, aField, MAX_CSV_COLUMNS);
+
+    // search for fields referenced by the mapping definition
+    pFieldMapping = aFieldMapping;
+    for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+    {
+      pFieldMapping->nCsvIndex = -1;
+
+      if (strchr("CIMU" /*CHANGE,IF,MAP,UNIQUE*/, pFieldMapping->csv.cOperation))
+      {
+        //if (strcmp(pFieldMapping->csv.szContent2, "67_*") == 0)
+        //  i = 0;  // ColumnIndex = 68; for debugging purposes only!
+
+        // search for column in csv header
+        for (nColumnIndex = 0; nColumnIndex < nCsvDataColumns; nColumnIndex++)
+          if (MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent) || MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent2))
+          {
+            pFieldMapping->nCsvIndex = nColumnIndex;
+            break;
+          }
+
+        // within conditional block ?
+        bCheck = true;
+        if (szIgnoreXPath)
+        {
+          if (strncmp(pFieldMapping->xml.szContent, szIgnoreXPath, strlen(szIgnoreXPath)) == 0)
+            bCheck = false; // yes, still within conditional block to be skipped
+          else
+            szIgnoreXPath = NULL; // no, end of conditional block reached
+        }
+
+        // mandatory column missing in header line ?
+        if (bCheck && pFieldMapping->nCsvIndex < 0 && pFieldMapping->csv.bMandatory)
+        {
+          sprintf(szErrorMessage, "Cannot find mandatory column in input file header");
+          LogCsvError(1, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, szEmptyString, szErrorMessage);
+        }
+
+        // start of new IF block ?
+        if (!szIgnoreXPath && pFieldMapping->csv.cOperation == 'I')
+          szIgnoreXPath = pFieldMapping->xml.szContent;
+      }
+    }
+
+    // count number of lines
+    nCsvDataLines = 1;
+    char *pc = pReadPos;
+    while (*pc)
+      if (*pc++ == '\n')
+        nCsvDataLines++;
+
+    // allocate memory for field pointer array
+    nCsvDataFieldsBufferSize = nCsvDataLines * nCsvDataColumns * sizeof(pchar);
+    aCsvDataFields = (pchar *)malloc(nCsvDataFieldsBufferSize);
+
+    if (!aCsvDataFields)
+    {
+      sprintf(szLastError, "Not enough memory for csv content field buffer input file '%s' (%d bytes for %d lines and %d columns)", szFileName, nCsvDataFieldsBufferSize, nCsvDataLines, nCsvDataColumns);
+      puts(szLastError);
+      return -1; // not enough free memory
+    }
+
+    // initialize flags whether csv values has been quoted or not
+    for (i = 0; i < nCsvDataColumns; i++)
+      abColumnQuoted[i] = false;
+
+    // clear field pointer array
+    memset(aCsvDataFields, 0, nCsvDataFieldsBufferSize);
+
+    pchar *pCsvDataFields = aCsvDataFields;
+
+    while (pLine = GetNextLine(&pReadPos))
+    {
+      //if (nRealCsvDataLines >= 761)
+      //  i = 0;  // for debugging purposes only!
+
+      if (nRealCsvDataLines == 0 && !*szCsvHeader2)
+        mystrncpy(szTempHeader, pLine, MAX_HEADER_SIZE);
+
+      // parse current csv line
+      nColumns = GetFields(pLine, cColumnDelimiter, aField, nCsvDataColumns, (nRealCsvDataLines == 0) ? abColumnQuoted : NULL);
+
+      // count non-empty columns
+      nNonEmptyColumns = 0;
+      for (i = 0; i < nColumns; i++)
+        if (*aField[i])
+          nNonEmptyColumns++;
+
+      if (nNonEmptyColumns >= 3 && nRealCsvDataLines == 0 && !*szCsvHeader2)
+      {
+        // check existance of second header line
+        nFound = 0;
+
+        for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+        {
+          bFound = false;
+
+          if (strchr("CIMU" /*CHANGE,IF,MAP,UNIQUE*/, pFieldMapping->csv.cOperation))
+          {
+            // search for column name in potential csv header
+            for (nColumnIndex = 0; nColumnIndex < nColumns && !bFound; nColumnIndex++)
+              if (MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent) || MatchingColumnName(aField[nColumnIndex], pFieldMapping->csv.szContent2))
+              {
+                bFound = true;
+                nFound++;
+              }
+          }
+        }
+
+        if (nFound >= nCsvDataColumns / 2)
+        {
+          // save second header line, if minimum half of the columns is matching column names
+          mystrncpy(szCsvHeader2, szTempHeader, MAX_HEADER_SIZE);
+          nNonEmptyColumns = 0;
+        }
+      }
+
+      if (nNonEmptyColumns >= 3 && nRealCsvDataLines < nCsvDataLines)
+      {
+        // copy pointer of fields content to field pointer array
+        memcpy(pCsvDataFields, aField, nColumns * sizeof(pchar));
+        // initialize non existing fields at the end of the line with empty strings
+        for (i = nColumns; i < nCsvDataColumns; i++)
+          pCsvDataFields[i] = (pchar)szEmptyString;
+        // next line
+        pCsvDataFields += nCsvDataColumns;
+        nRealCsvDataLines++;
+      }
+    }
+
+    return nFieldMappings;
+  }
+  // end of function "ReadCsvData"
+
+  //--------------------------------------------------------------------------------------------------------
+
+  cpchar GetCsvFieldValue(int nCsvDataLine, int nCsvColumn)
+  {
+    cpchar pResult = NULL;
+
+    if (nCsvDataLine >= 0 && nCsvDataLine < nRealCsvDataLines && nCsvColumn >= 0 && nCsvColumn < nCsvDataColumns)
+      pResult = aCsvDataFields[nCsvDataLine * nCsvDataColumns + nCsvColumn];
+
+    return pResult;
   }
 
-  return bMatch;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  bool IsNewCsvFieldValue(int nCsvDataLines, int nCsvColumn, cpchar szCsvValue)
+  {
+    bool bResult = false;
 
-int AddXmlNodeField(xmlDocPtr pDoc, xmlNodePtr pParentNode, FieldMapping *pFieldMapping, int nXPathOffset, int nCsvDataLine)
-{
-  cpchar pCsvFieldValue = NULL;
-
-  if (pFieldMapping->xml.cOperation == 'M'/*MAP*/) {
-    if (pFieldMapping->csv.cOperation == 'F'/*FIX*/)
-      SetNodeValue(pDoc, pParentNode, pFieldMapping->xml.szContent + nXPathOffset, pFieldMapping->csv.szContent, pFieldMapping);
-
-    if (pFieldMapping->csv.cOperation == 'M'/*MAP*/) {
-      pCsvFieldValue = GetCsvFieldValue(nCsvDataLine, pFieldMapping->nCsvIndex);
-      SetNodeValue(pDoc, pParentNode, pFieldMapping->xml.szContent + nXPathOffset, pCsvFieldValue, pFieldMapping);
+    if (nCsvDataLines >= 0 && nCsvDataLines < nRealCsvDataLines && nCsvColumn >= 0 && nCsvColumn < nCsvDataColumns)
+    {
+      bResult = true;
+      cpchar *ppCsvValue = (cpchar *)(aCsvDataFields + nCsvColumn);
+      for (int i = 0; i < nCsvDataLines; i++)
+      {
+        if (strcmp(szCsvValue, *ppCsvValue) == 0)
+          return false;
+        ppCsvValue += nCsvDataColumns;
+      }
     }
+
+    return bResult;
   }
 
-  return 0;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  int GetNumberOfDigits(cpchar szValue)
+  {
+    int nResult = 0;
 
-/*
+    for (cpchar pPos = szValue; *pPos >= '0' && *pPos <= '9'; pPos++)
+      nResult++;
+
+    return nResult;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int GetCsvDecimalPoint()
+  {
+    int i, nColumnIndex, nMapIndex, nDigitsBehindComma, nDigitsBehindPoint;
+    int nCommaUsage = 0;
+    int nPointUsage = 0;
+    int nReturnCode = 0;
+    pchar *ppCsvDataField;
+    cpchar pCsvFieldValue = NULL;
+    cpchar pCommaPos = NULL;
+    cpchar pPointPos = NULL;
+    CPFieldMapping pFieldMapping = aFieldMapping;
+
+    for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+    {
+      if (pFieldMapping->csv.cType == 'N' /*NUMBER*/ && pFieldMapping->csv.cOperation == 'M' /*MAP*/ && pFieldMapping->nCsvIndex >= 0)
+      {
+        nColumnIndex = pFieldMapping->nCsvIndex;
+        ppCsvDataField = aCsvDataFields + nColumnIndex;
+
+        for (i = 0; i < nRealCsvDataLines; i++)
+        {
+          pCsvFieldValue = *ppCsvDataField;
+          //pCsvFieldValue = GetCsvFieldValue(i, nColumnIndex);
+
+          pCommaPos = strchr(pCsvFieldValue, ',');
+          if (pCommaPos)
+            nDigitsBehindComma = GetNumberOfDigits(pCommaPos + 1);
+          else
+            nDigitsBehindComma = -1;
+
+          pPointPos = strchr(pCsvFieldValue, '.');
+          if (pPointPos)
+            nDigitsBehindPoint = GetNumberOfDigits(pPointPos + 1);
+          else
+            nDigitsBehindPoint = -1;
+
+          if (pCommaPos)
+          {
+            if (pPointPos)
+            {
+              if (pCommaPos > pPointPos)
+                nCommaUsage++; // comma is behind point
+              else
+                nPointUsage++; // point is behind comma
+            }
+            else if (nDigitsBehindComma != 3)
+              nCommaUsage++; // high probability of comma used as decimal point
+          }
+          else
+          {
+            if (pPointPos && nDigitsBehindPoint != 3)
+              nPointUsage++; // high probability of point used as decimal point
+          }
+
+          // increment data field pointer to next csv line
+          ppCsvDataField += nCsvDataColumns;
+        }
+      }
+    }
+
+    cDecimalPoint = (nCommaUsage > nPointUsage) ? ',' : '.';
+    return nReturnCode;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int GetColumnIndex(cpchar szColumnName)
+  {
+    int nMapIndex;
+    CPFieldMapping pFieldMapping;
+
+    // loop over all mapping fields
+    for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+      if (pFieldMapping->csv.cOperation == 'M' && (stricmp(szColumnName, pFieldMapping->csv.szContent) == 0 || stricmp(szColumnName, pFieldMapping->csv.szContent2) == 0))
+        return pFieldMapping->nCsvIndex;
+
+    return -1;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  bool CheckCsvCondition(int nCsvDataLine, CPFieldMapping pFieldMapping)
+  {
+    char szCondition[MAX_CONDITION_SIZE];
+    pchar pszLeftPart, pszOperator, pszRightPart;
+    cpchar pszFieldValue, pszLeftValue, pszRightValue;
+    int len, nLeftColumnIndex, nRightColumnIndex;
+    bool bMatch = false;
+
+    if (stricmp(pFieldMapping->csv.szCondition, "contentisvalid()") == 0)
+    {
+      // get content of csv field
+      pszFieldValue = GetCsvFieldValue(nCsvDataLine, pFieldMapping->nCsvIndex);
+
+      // check content of csv field
+      if (pFieldMapping->csv.cType == 'N' /*NUMBER*/)
+        bMatch = IsValidNumber(pszFieldValue, cDecimalPoint);
+
+      if (pFieldMapping->csv.cType == 'T' /*TEXT*/)
+        bMatch = IsValidText(pszFieldValue, pFieldMapping);
+
+      return bMatch;
+    }
+
+    // condition likes "CCY != FUND_CCY" or "48_* = '1'" ?
+    OldParseCondition(pFieldMapping->csv.szCondition, szCondition, &pszLeftPart, &pszOperator, &pszRightPart);
+
+    if (pszLeftPart && pszOperator && pszRightPart)
+    {
+      // condition found
+      nLeftColumnIndex = GetColumnIndex(pszLeftPart);
+      pszLeftValue = GetCsvFieldValue(nCsvDataLine, nLeftColumnIndex);
+
+      if (*pszRightPart == '\'')
+      {
+        pszRightValue = pszRightPart + 1;
+        len = strlen(pszRightPart);
+        if (len > 0 && pszRightPart[len - 1] == '\'')
+          pszRightPart[len - 1] = '\0';
+      }
+      else
+      {
+        nRightColumnIndex = GetColumnIndex(pszRightPart);
+        pszRightValue = GetCsvFieldValue(nCsvDataLine, nRightColumnIndex);
+      }
+
+      if (pszLeftValue && pszRightValue)
+      {
+        if (*pszOperator == '=')
+          bMatch = (strcmp(pszLeftValue, pszRightValue) == 0);
+        if (*pszOperator == '!')
+          bMatch = (strcmp(pszLeftValue, pszRightValue) != 0);
+        if (*pszOperator == '<')
+          bMatch = (strcmp(pszLeftValue, pszRightValue) < 0);
+        if (*pszOperator == '>')
+          bMatch = (strcmp(pszLeftValue, pszRightValue) > 0);
+      }
+    }
+
+    return bMatch;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int AddXmlNodeField(xmlDocPtr pDoc, xmlNodePtr pParentNode, FieldMapping *pFieldMapping, int nXPathOffset, int nCsvDataLine)
+  {
+    cpchar pCsvFieldValue = NULL;
+
+    if (pFieldMapping->xml.cOperation == 'M' /*MAP*/)
+    {
+      if (pFieldMapping->csv.cOperation == 'F' /*FIX*/)
+        SetNodeValue(pDoc, pParentNode, pFieldMapping->xml.szContent + nXPathOffset, pFieldMapping->csv.szContent, pFieldMapping);
+
+      if (pFieldMapping->csv.cOperation == 'M' /*MAP*/)
+      {
+        pCsvFieldValue = GetCsvFieldValue(nCsvDataLine, pFieldMapping->nCsvIndex);
+        SetNodeValue(pDoc, pParentNode, pFieldMapping->xml.szContent + nXPathOffset, pCsvFieldValue, pFieldMapping);
+      }
+    }
+
+    return 0;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  /*
 strftime: https://en.cppreference.com/w/c/chrono/strftime
 time_t clk = time(NULL);
 struct tm* tm_info;
@@ -2870,25 +3153,26 @@ tm_info = localtime(&timer);
 strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
 */
 
-#define MAX_COUNTERS  20
-#define MAX_COUNTER_LENGTH  50
+#define MAX_COUNTERS 20
+#define MAX_COUNTER_LENGTH 50
 
-typedef struct {
-  char szCounterName[MAX_COUNTER_NAME_SIZE];
-  char szPeriod[8];  // EVER,YEAR,MONTH,DAY,HOUR,MINUTE,SECOND
-  int nPeriodLength;
-  char szCurrentPeriod[15];  // YYYYMMDDHHMISS
-  char szType[10];  // NUM,HEX,APLHA,ALPHANUM,NUMALPHA
-  char szValidChars[37];  // 0-9,A-Z
-  int nLength;
-  char szStartValue[MAX_COUNTER_LENGTH+1];
-  char szCurrentValue[MAX_COUNTER_LENGTH+1];
-} CounterDefinition;
+  typedef struct
+  {
+    char szCounterName[MAX_COUNTER_NAME_SIZE];
+    char szPeriod[8]; // EVER,YEAR,MONTH,DAY,HOUR,MINUTE,SECOND
+    int nPeriodLength;
+    char szCurrentPeriod[15]; // YYYYMMDDHHMISS
+    char szType[10];          // NUM,HEX,APLHA,ALPHANUM,NUMALPHA
+    char szValidChars[37];    // 0-9,A-Z
+    int nLength;
+    char szStartValue[MAX_COUNTER_LENGTH + 1];
+    char szCurrentValue[MAX_COUNTER_LENGTH + 1];
+  } CounterDefinition;
 
-CounterDefinition aCounter[MAX_COUNTERS];
-int nCounters = 0;
+  CounterDefinition aCounter[MAX_COUNTERS];
+  int nCounters = 0;
 
-/*
+  /*
 EVER,,NUM,10,1,1
 YEAR,2019,NUM,10,0,1
 YEAR,2019,HEX,10,0,A
@@ -2901,563 +3185,617 @@ MINUTE,201901041200,NUM,6,0,1
 SECOND,20190104125900,NUM,5,0,1
 */
 
-int GetNextCounterValue(char *pszResult, cpchar pszCounterName)
-{
-  int i, nReturnCode, nValues, nValueLen, nMissingChars, nValidChars, nPos, nCharIndex, nCounterIndex = -1;
-  CounterDefinition *pCounterDef = NULL;
-  char szCounterFileName[MAX_FILE_NAME_SIZE];
-  char szLine[MAX_LINE_SIZE];
-  char szNow[15];
-  char *pChar;
-  pchar aszValue[6];
+  int GetNextCounterValue(char *pszResult, cpchar pszCounterName)
+  {
+    int i, nReturnCode, nValues, nValueLen, nMissingChars, nValidChars, nPos, nCharIndex, nCounterIndex = -1;
+    CounterDefinition *pCounterDef = NULL;
+    char szCounterFileName[MAX_FILE_NAME_SIZE];
+    char szLine[MAX_LINE_SIZE];
+    char szNow[15];
+    char *pChar;
+    pchar aszValue[6];
 
-  if (strlen(pszCounterName) > MAX_COUNTER_NAME_LEN) {
-    sprintf(szLastError, "Name of counter is too long (maximum is %d)", MAX_COUNTER_NAME_LEN);
-    return 1;
-  }
-
-  for (i = 0; i < nCounters && nCounterIndex < 0; i++)
-    if (stricmp(pszCounterName, aCounter[i].szCounterName) == 0) {
-      nCounterIndex = i;
-      pCounterDef = aCounter + i;
+    if (strlen(pszCounterName) > MAX_COUNTER_NAME_LEN)
+    {
+      sprintf(szLastError, "Name of counter is too long (maximum is %d)", MAX_COUNTER_NAME_LEN);
+      return 1;
     }
 
-  if (nCounterIndex < 0) {
-    if (nCounters == MAX_COUNTERS) {
-      sprintf(szLastError, "Too many counters used (maximum is %d)", MAX_COUNTERS);
-      return 2;
-    }
-
-    // read counter definition file
-    sprintf(szCounterFileName, "%s%s%s", szCounterPath, pszCounterName, ".cnt");
-    nReturnCode = MyLoadFile(szCounterFileName, szLine, MAX_LINE_SIZE);
-    if (nReturnCode < 0)
-      return nReturnCode;
-
-    // remove CR/LF at the end of the line
-    pChar = strchr(szLine, '\r');
-    if (pChar != NULL)
-      *pChar = '\0';
-    pChar = strchr(szLine, '\n');
-    if (pChar != NULL)
-      *pChar = '\0';
-
-    // Parse content of counter definition
-    // Sample: "DAY,20190103,NUM,6,1" or "DAY;20190103;NUM;6;1;1"
-    nValues = SplitString(szLine, ',', aszValue, 6, " ");
-    if (nValues < 5)
-      nValues = SplitString(szLine, ';', aszValue, 6, " ");
-
-    if (nValues < 5) {
-      sprintf(szLastError, "Missing value(s) in counter definition '%s' (must contain at least five values)", szCounterFileName);
-      return 2;
-    }
-
-    pCounterDef = aCounter + nCounters;
-
-    // counter name
-    strcpy(pCounterDef->szCounterName, pszCounterName);
-
-    // counter period
-    if (!CheckRegex(aszValue[0], ",EVER,YEAR,MONTH,DAY,HOUR,MINUTE,SECOND,")) {
-      sprintf(szLastError, "Invalid period in counter definition '%s' ('%s' not in 'EVER,YEAR,MONTH,DAY,HOUR,MINUTE,SECOND')", szCounterFileName, aszValue[0]);
-      return 3;
-    }
-    strcpy(pCounterDef->szPeriod, aszValue[0]);
-
-    pCounterDef->nPeriodLength = 0;
-    if (strcmp(pCounterDef->szPeriod, "YEAR") == 0) pCounterDef->nPeriodLength = 4;
-    if (strcmp(pCounterDef->szPeriod, "MONTH") == 0) pCounterDef->nPeriodLength = 6;
-    if (strcmp(pCounterDef->szPeriod, "DAY") == 0) pCounterDef->nPeriodLength = 8;
-    if (strcmp(pCounterDef->szPeriod, "HOUR") == 0) pCounterDef->nPeriodLength = 10;
-    if (strcmp(pCounterDef->szPeriod, "MINUTE") == 0) pCounterDef->nPeriodLength = 12;
-    if (strcmp(pCounterDef->szPeriod, "SECOND") == 0) pCounterDef->nPeriodLength = 14;
-
-    // current period
-    if (!ValidChars(aszValue[1], "0123456789") || strlen(aszValue[1]) > 14) {
-      sprintf(szLastError, "Invalid current period '%s' in counter definition '%s'", aszValue[1], szCounterFileName);
-      return 3;
-    }
-    strcpy(pCounterDef->szCurrentPeriod, aszValue[1]);
-
-    // counter type
-    if (!CheckRegex(aszValue[2], ",NUM,HEX,APLHA,ALPHANUM,NUMALPHA,")) {
-      sprintf(szLastError, "Invalid type in counter definition '%s' ('%s' not in 'NUM,HEX,APLHA,ALPHANUM,NUMALPHA')", szCounterFileName, aszValue[2]);
-      return 4;
-    }
-    strcpy(pCounterDef->szType, aszValue[2]);
-
-    if (strcmp(aszValue[2], "NUM") == 0)
-      strcpy(pCounterDef->szValidChars, "0123456789");
-    if (strcmp(aszValue[2], "HEX") == 0)
-      strcpy(pCounterDef->szValidChars, "0123456789ABCDEF");
-    if (strcmp(aszValue[2], "APLHA") == 0)
-      strcpy(pCounterDef->szValidChars, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-    if (strcmp(aszValue[2], "APLHANUM") == 0)
-      strcpy(pCounterDef->szValidChars, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
-    if (strcmp(aszValue[2], "NUMALPHA") == 0)
-      strcpy(pCounterDef->szValidChars, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-
-    // counter length
-    if (!ValidChars(aszValue[3], "0123456789") || strlen(aszValue[3]) > 2 || atoi(aszValue[3]) > MAX_COUNTER_LENGTH) {
-      sprintf(szLastError, "Invalid length '%s' in counter definition '%s'", aszValue[3], szCounterFileName);
-      return 5;
-    }
-    pCounterDef->nLength = atoi(aszValue[3]);
-
-    // check start value
-    if (!ValidChars(aszValue[4], pCounterDef->szValidChars) || (int)strlen(aszValue[4]) > pCounterDef->nLength) {
-      sprintf(szLastError, "Invalid start value '%s' in counter definition '%s'", aszValue[4], szCounterFileName);
-      return 6;
-    }
-    // load start value
-    nValueLen = strlen(aszValue[4]);
-    nMissingChars = pCounterDef->nLength - nValueLen;
-    for (i = 0; i < nMissingChars; i++)
-      pCounterDef->szStartValue[i] = pCounterDef->szValidChars[0];
-    strcpy(pCounterDef->szStartValue + nMissingChars, aszValue[4]);
-
-    // current value
-    strcpy(pCounterDef->szCurrentValue, pCounterDef->szStartValue);
-    if (nValues > 5) {
-      if (!ValidChars(aszValue[5], pCounterDef->szValidChars) || (int)strlen(aszValue[5]) > pCounterDef->nLength) {
-        sprintf(szLastError, "Invalid current value '%s' in counter definition '%s'", aszValue[5], szCounterFileName);
-        return 7;
+    for (i = 0; i < nCounters && nCounterIndex < 0; i++)
+      if (stricmp(pszCounterName, aCounter[i].szCounterName) == 0)
+      {
+        nCounterIndex = i;
+        pCounterDef = aCounter + i;
       }
+
+    if (nCounterIndex < 0)
+    {
+      if (nCounters == MAX_COUNTERS)
+      {
+        sprintf(szLastError, "Too many counters used (maximum is %d)", MAX_COUNTERS);
+        return 2;
+      }
+
+      // read counter definition file
+      sprintf(szCounterFileName, "%s%s%s", szCounterPath, pszCounterName, ".cnt");
+      nReturnCode = MyLoadFile(szCounterFileName, szLine, MAX_LINE_SIZE);
+      if (nReturnCode < 0)
+        return nReturnCode;
+
+      // remove CR/LF at the end of the line
+      pChar = strchr(szLine, '\r');
+      if (pChar != NULL)
+        *pChar = '\0';
+      pChar = strchr(szLine, '\n');
+      if (pChar != NULL)
+        *pChar = '\0';
+
+      // Parse content of counter definition
+      // Sample: "DAY,20190103,NUM,6,1" or "DAY;20190103;NUM;6;1;1"
+      nValues = SplitString(szLine, ',', aszValue, 6, " ");
+      if (nValues < 5)
+        nValues = SplitString(szLine, ';', aszValue, 6, " ");
+
+      if (nValues < 5)
+      {
+        sprintf(szLastError, "Missing value(s) in counter definition '%s' (must contain at least five values)", szCounterFileName);
+        return 2;
+      }
+
+      pCounterDef = aCounter + nCounters;
+
+      // counter name
+      strcpy(pCounterDef->szCounterName, pszCounterName);
+
+      // counter period
+      if (!CheckRegex(aszValue[0], ",EVER,YEAR,MONTH,DAY,HOUR,MINUTE,SECOND,"))
+      {
+        sprintf(szLastError, "Invalid period in counter definition '%s' ('%s' not in 'EVER,YEAR,MONTH,DAY,HOUR,MINUTE,SECOND')", szCounterFileName, aszValue[0]);
+        return 3;
+      }
+      strcpy(pCounterDef->szPeriod, aszValue[0]);
+
+      pCounterDef->nPeriodLength = 0;
+      if (strcmp(pCounterDef->szPeriod, "YEAR") == 0)
+        pCounterDef->nPeriodLength = 4;
+      if (strcmp(pCounterDef->szPeriod, "MONTH") == 0)
+        pCounterDef->nPeriodLength = 6;
+      if (strcmp(pCounterDef->szPeriod, "DAY") == 0)
+        pCounterDef->nPeriodLength = 8;
+      if (strcmp(pCounterDef->szPeriod, "HOUR") == 0)
+        pCounterDef->nPeriodLength = 10;
+      if (strcmp(pCounterDef->szPeriod, "MINUTE") == 0)
+        pCounterDef->nPeriodLength = 12;
+      if (strcmp(pCounterDef->szPeriod, "SECOND") == 0)
+        pCounterDef->nPeriodLength = 14;
+
+      // current period
+      if (!ValidChars(aszValue[1], "0123456789") || strlen(aszValue[1]) > 14)
+      {
+        sprintf(szLastError, "Invalid current period '%s' in counter definition '%s'", aszValue[1], szCounterFileName);
+        return 3;
+      }
+      strcpy(pCounterDef->szCurrentPeriod, aszValue[1]);
+
+      // counter type
+      if (!CheckRegex(aszValue[2], ",NUM,HEX,APLHA,ALPHANUM,NUMALPHA,"))
+      {
+        sprintf(szLastError, "Invalid type in counter definition '%s' ('%s' not in 'NUM,HEX,APLHA,ALPHANUM,NUMALPHA')", szCounterFileName, aszValue[2]);
+        return 4;
+      }
+      strcpy(pCounterDef->szType, aszValue[2]);
+
+      if (strcmp(aszValue[2], "NUM") == 0)
+        strcpy(pCounterDef->szValidChars, "0123456789");
+      if (strcmp(aszValue[2], "HEX") == 0)
+        strcpy(pCounterDef->szValidChars, "0123456789ABCDEF");
+      if (strcmp(aszValue[2], "APLHA") == 0)
+        strcpy(pCounterDef->szValidChars, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+      if (strcmp(aszValue[2], "APLHANUM") == 0)
+        strcpy(pCounterDef->szValidChars, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+      if (strcmp(aszValue[2], "NUMALPHA") == 0)
+        strcpy(pCounterDef->szValidChars, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+      // counter length
+      if (!ValidChars(aszValue[3], "0123456789") || strlen(aszValue[3]) > 2 || atoi(aszValue[3]) > MAX_COUNTER_LENGTH)
+      {
+        sprintf(szLastError, "Invalid length '%s' in counter definition '%s'", aszValue[3], szCounterFileName);
+        return 5;
+      }
+      pCounterDef->nLength = atoi(aszValue[3]);
+
+      // check start value
+      if (!ValidChars(aszValue[4], pCounterDef->szValidChars) || (int)strlen(aszValue[4]) > pCounterDef->nLength)
+      {
+        sprintf(szLastError, "Invalid start value '%s' in counter definition '%s'", aszValue[4], szCounterFileName);
+        return 6;
+      }
+      // load start value
       nValueLen = strlen(aszValue[4]);
       nMissingChars = pCounterDef->nLength - nValueLen;
-      strcpy(pCounterDef->szCurrentValue + nMissingChars, aszValue[5]);
-    }
+      for (i = 0; i < nMissingChars; i++)
+        pCounterDef->szStartValue[i] = pCounterDef->szValidChars[0];
+      strcpy(pCounterDef->szStartValue + nMissingChars, aszValue[4]);
 
-    nCounters++;
-  }
-
-  if (pCounterDef->nPeriodLength > 0) {
-    // get current period
-	  time_t now = time(NULL);
-	  struct tm* tm_info;
-	  tm_info = localtime(&now);
-    strftime(szNow, MAX_VALUE_SIZE, "%Y%m%d%H%M%S", tm_info);  // e.g. "2018-12-08T12:30:00"
-    szNow[pCounterDef->nPeriodLength] = '\0';
-
-    if (strcmp(pCounterDef->szCurrentPeriod, szNow) != 0) {
-      // new period --> reset current value
-      strcpy(pCounterDef->szCurrentPeriod, szNow);
+      // current value
       strcpy(pCounterDef->szCurrentValue, pCounterDef->szStartValue);
+      if (nValues > 5)
+      {
+        if (!ValidChars(aszValue[5], pCounterDef->szValidChars) || (int)strlen(aszValue[5]) > pCounterDef->nLength)
+        {
+          sprintf(szLastError, "Invalid current value '%s' in counter definition '%s'", aszValue[5], szCounterFileName);
+          return 7;
+        }
+        nValueLen = strlen(aszValue[4]);
+        nMissingChars = pCounterDef->nLength - nValueLen;
+        strcpy(pCounterDef->szCurrentValue + nMissingChars, aszValue[5]);
+      }
+
+      nCounters++;
     }
-  }
 
-  // return current counter value
-  strcpy(pszResult, pCounterDef->szCurrentValue);
+    if (pCounterDef->nPeriodLength > 0)
+    {
+      // get current period
+      time_t now = time(NULL);
+      struct tm *tm_info;
+      tm_info = localtime(&now);
+      strftime(szNow, MAX_VALUE_SIZE, "%Y%m%d%H%M%S", tm_info); // e.g. "2018-12-08T12:30:00"
+      szNow[pCounterDef->nPeriodLength] = '\0';
 
-  // increment counter value
-  //char cLastValidChar = pCounterDef->szValidChars[strlen(pCounterDef->szValidChars)-1];
-  nValidChars = strlen(pCounterDef->szValidChars);
-  nPos = pCounterDef->nLength - 1;
-
-  while (nPos >= 0) {
-    pChar = strchr(pCounterDef->szValidChars, pCounterDef->szCurrentValue[nPos]);
-    nCharIndex = pChar ? (pChar - pCounterDef->szValidChars) : nValidChars;
-    if (nCharIndex >= nValidChars - 1) {
-      pCounterDef->szCurrentValue[nPos] = pCounterDef->szValidChars[0];
-      nPos--;
+      if (strcmp(pCounterDef->szCurrentPeriod, szNow) != 0)
+      {
+        // new period --> reset current value
+        strcpy(pCounterDef->szCurrentPeriod, szNow);
+        strcpy(pCounterDef->szCurrentValue, pCounterDef->szStartValue);
+      }
     }
-    else {
-      pCounterDef->szCurrentValue[nPos] = pCounterDef->szValidChars[nCharIndex + 1];
-      nPos = -2;  // increment successful
-    }
-  }
 
-  /*
+    // return current counter value
+    strcpy(pszResult, pCounterDef->szCurrentValue);
+
+    // increment counter value
+    //char cLastValidChar = pCounterDef->szValidChars[strlen(pCounterDef->szValidChars)-1];
+    nValidChars = strlen(pCounterDef->szValidChars);
+    nPos = pCounterDef->nLength - 1;
+
+    while (nPos >= 0)
+    {
+      pChar = strchr(pCounterDef->szValidChars, pCounterDef->szCurrentValue[nPos]);
+      nCharIndex = pChar ? (pChar - pCounterDef->szValidChars) : nValidChars;
+      if (nCharIndex >= nValidChars - 1)
+      {
+        pCounterDef->szCurrentValue[nPos] = pCounterDef->szValidChars[0];
+        nPos--;
+      }
+      else
+      {
+        pCounterDef->szCurrentValue[nPos] = pCounterDef->szValidChars[nCharIndex + 1];
+        nPos = -2; // increment successful
+      }
+    }
+
+    /*
   if (nPos == -1)
     ; // counter overflow
   */
 
-  return 0;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int SaveCounterValues()
-{
-  int nCounterIndex, nReturnCode = 0;
-  CounterDefinition *pCounterDef = aCounter;
-  char szCounterFileName[MAX_FILE_NAME_SIZE];
-  char szLine[MAX_LINE_SIZE];
-
-  for (nCounterIndex = 0; nCounterIndex < nCounters; nCounterIndex++, pCounterDef++) {
-    // Content of counter definition
-    // Sample: "DAY,20190103,NUM,6,1,1" or "DAY;20190103;NUM;6;1;1"
-    sprintf(szLine, "%s,%s,%s,%d,%s,%s\n", pCounterDef->szPeriod, pCounterDef->szCurrentPeriod, pCounterDef->szType, pCounterDef->nLength, pCounterDef->szStartValue, pCounterDef->szCurrentValue);
-
-    sprintf(szCounterFileName, "%s%s%s", szCounterPath, pCounterDef->szCounterName, ".cnt");
-    nReturnCode = MyWriteFile(szCounterFileName, szLine);
+    return 0;
   }
 
-  return nReturnCode;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
+  int SaveCounterValues()
+  {
+    int nCounterIndex, nReturnCode = 0;
+    CounterDefinition *pCounterDef = aCounter;
+    char szCounterFileName[MAX_FILE_NAME_SIZE];
+    char szLine[MAX_LINE_SIZE];
 
-int GetVarValue(CPFieldMapping pFieldMapping, char *pResult, int nMaxSize)
-{
-	char szValue[MAX_VALUE_SIZE] = "";
-	char szVarDef[MAX_VALUE_SIZE];
-	char szAppend[MAX_VALUE_SIZE];
-  char szCounterName[MAX_COUNTER_NAME_SIZE];
-	char szFormat[MAX_TIMESTAMP_FORMAT_SIZE];
-	char szTimeFormat[MAX_TIMESTAMP_FORMAT_SIZE];
-	char *pEnd, *pPos = szVarDef;
-	int nLen;
+    for (nCounterIndex = 0; nCounterIndex < nCounters; nCounterIndex++, pCounterDef++)
+    {
+      // Content of counter definition
+      // Sample: "DAY,20190103,NUM,6,1,1" or "DAY;20190103;NUM;6;1;1"
+      sprintf(szLine, "%s,%s,%s,%d,%s,%s\n", pCounterDef->szPeriod, pCounterDef->szCurrentPeriod, pCounterDef->szType, pCounterDef->nLength, pCounterDef->szStartValue, pCounterDef->szCurrentValue);
 
-	time_t now = time(NULL);
-	struct tm* tm_info;
-	tm_info = localtime(&now);
+      sprintf(szCounterFileName, "%s%s%s", szCounterPath, pCounterDef->szCounterName, ".cnt");
+      nReturnCode = MyWriteFile(szCounterFileName, szLine);
+    }
 
-	strcpy(szVarDef, pFieldMapping->csv.szContent);
-	// VAR; "'SAMPLE.' NOW(YYYY-MM-DD) '.' COUNTER(day-index-1)"; M; TEXT; ; 1; 128; ; ; MAP; "ControlData/UniqueDocumentID"; ; TEXT
+    return nReturnCode;
+  }
 
-	while (*pPos) {
-		if (*pPos == '\'') {
-		  pEnd = ++pPos;
-			while (*pEnd && *pEnd != '\'')
-			  pEnd++;
-			if (*pEnd == '\'')
-			  *pEnd++ = '\0';
-			nLen = strlen(szValue);
-			mystrncpy(szValue + nLen, pPos, MAX_VALUE_SIZE - nLen);
-			pPos = pEnd;
-		}
-		else
-			if (strncmp(pPos, "NOW", 3) == 0) {
-			  pPos += 3;
-				*szFormat = '\0';
-				if (*pPos == '(') {
-					pEnd = ++pPos;
-					while (*pEnd && *pEnd != ')')
-						pEnd++;
-					if (*pEnd == ')')
-						*pEnd++ = '\0';
-					mystrncpy(szFormat, pPos, MAX_TIMESTAMP_FORMAT_SIZE);
-				}
-				else
-				  pEnd = pPos;
+  //--------------------------------------------------------------------------------------------------------
 
-				if (strcmp(szFormat, "YYYY-MM-DD") == 0)
-					strcpy(szTimeFormat, "%Y-%m-%d");
-				else
-					strcpy(szTimeFormat, "%Y-%m-%dT%H:%M:%S");
-				strftime(szAppend, MAX_VALUE_SIZE, szTimeFormat, tm_info);  // e.g. "2018-12-08T12:30:00"
+  int GetVarValue(CPFieldMapping pFieldMapping, char *pResult, int nMaxSize)
+  {
+    char szValue[MAX_VALUE_SIZE] = "";
+    char szVarDef[MAX_VALUE_SIZE];
+    char szAppend[MAX_VALUE_SIZE];
+    char szCounterName[MAX_COUNTER_NAME_SIZE];
+    char szFormat[MAX_TIMESTAMP_FORMAT_SIZE];
+    char szTimeFormat[MAX_TIMESTAMP_FORMAT_SIZE];
+    char *pEnd, *pPos = szVarDef;
+    int nLen;
 
-				nLen = strlen(szValue);
-				mystrncpy(szValue + nLen, szAppend, MAX_VALUE_SIZE - nLen);
-				pPos = pEnd;
-			}
+    time_t now = time(NULL);
+    struct tm *tm_info;
+    tm_info = localtime(&now);
+
+    strcpy(szVarDef, pFieldMapping->csv.szContent);
+    // VAR; "'SAMPLE.' NOW(YYYY-MM-DD) '.' COUNTER(day-index-1)"; M; TEXT; ; 1; 128; ; ; MAP; "ControlData/UniqueDocumentID"; ; TEXT
+
+    while (*pPos)
+    {
+      if (*pPos == '\'')
+      {
+        pEnd = ++pPos;
+        while (*pEnd && *pEnd != '\'')
+          pEnd++;
+        if (*pEnd == '\'')
+          *pEnd++ = '\0';
+        nLen = strlen(szValue);
+        mystrncpy(szValue + nLen, pPos, MAX_VALUE_SIZE - nLen);
+        pPos = pEnd;
+      }
+      else if (strncmp(pPos, "NOW", 3) == 0)
+      {
+        pPos += 3;
+        *szFormat = '\0';
+        if (*pPos == '(')
+        {
+          pEnd = ++pPos;
+          while (*pEnd && *pEnd != ')')
+            pEnd++;
+          if (*pEnd == ')')
+            *pEnd++ = '\0';
+          mystrncpy(szFormat, pPos, MAX_TIMESTAMP_FORMAT_SIZE);
+        }
+        else
+          pEnd = pPos;
+
+        if (strcmp(szFormat, "YYYY-MM-DD") == 0)
+          strcpy(szTimeFormat, "%Y-%m-%d");
+        else
+          strcpy(szTimeFormat, "%Y-%m-%dT%H:%M:%S");
+        strftime(szAppend, MAX_VALUE_SIZE, szTimeFormat, tm_info); // e.g. "2018-12-08T12:30:00"
+
+        nLen = strlen(szValue);
+        mystrncpy(szValue + nLen, szAppend, MAX_VALUE_SIZE - nLen);
+        pPos = pEnd;
+      }
+      else if (strncmp(pPos, "COUNTER(", 8) == 0)
+      {
+        pPos += 8;
+        pEnd = pPos;
+        while (*pEnd && *pEnd != ')')
+          pEnd++;
+        if (*pEnd == ')')
+          *pEnd++ = '\0';
+        mystrncpy(szCounterName, pPos, MAX_COUNTER_NAME_SIZE);
+
+        GetNextCounterValue(szAppend, szCounterName);
+
+        nLen = strlen(szValue);
+        mystrncpy(szValue + nLen, szAppend, MAX_VALUE_SIZE - nLen);
+        pPos = pEnd;
+      }
       else
-			  if (strncmp(pPos, "COUNTER(", 8) == 0) {
-			    pPos += 8;
-					pEnd = pPos;
-					while (*pEnd && *pEnd != ')')
-						pEnd++;
-					if (*pEnd == ')')
-						*pEnd++ = '\0';
-					mystrncpy(szCounterName, pPos, MAX_COUNTER_NAME_SIZE);
+      {
+        pPos++;
+      }
 
-				  GetNextCounterValue(szAppend, szCounterName);
+      // skip spaces
+      while (*pPos == ' ')
+        pPos++;
+    }
 
-				  nLen = strlen(szValue);
-				  mystrncpy(szValue + nLen, szAppend, MAX_VALUE_SIZE - nLen);
-				  pPos = pEnd;
-			  }
-			  else {
-				  pPos++;
-			  }
+    mystrncpy(pResult, szValue, nMaxSize);
 
-		// skip spaces
-		while (*pPos == ' ')
-		  pPos++;
-	}
-
-	mystrncpy(pResult, szValue, nMaxSize);
-
-	/*
+    /*
   if (stricmp(pFieldMapping->csv.szContent, "NOW") == 0) {
     time_t now = time(NULL);
     struct tm* tm_info;
     tm_info = localtime(&now);
     strftime(pResult, nMaxSize, "%Y-%m-%dT%H:%M:%S", tm_info);  // e.g. "2018-12-08T12:30:00"
   }*/
-  return 0;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int AddXmlField(xmlDocPtr pDoc, CPFieldMapping pFieldMapping, cpchar XPath, int nCsvDataLine, AttributeNameValueList *pAttributeNameValueList = NULL)
-{
-  char szValue[MAX_VALUE_SIZE] = "";
-  cpchar pCsvFieldValue = NULL;
-  int nReturnCode;
-
-  if (pFieldMapping->xml.cOperation == 'M'/*MAP*/)
-  {
-    if (pFieldMapping->csv.cOperation == 'F'/*FIX*/) {
-      SetNodeValue(pDoc, NULL, XPath, pFieldMapping->csv.szContent, pFieldMapping);
-    }
-
-    if (pFieldMapping->csv.cOperation == 'M'/*MAP*/) {
-      // get value of csv field
-      pCsvFieldValue = GetCsvFieldValue(nCsvDataLine, pFieldMapping->nCsvIndex);
-      if (!pCsvFieldValue)
-        pCsvFieldValue = szEmptyString;
-
-      // no csv field value available, but default value defined ?
-      if (!*pCsvFieldValue && *pFieldMapping->csv.szDefault)
-        pCsvFieldValue = pFieldMapping->csv.szDefault;  // use default value
-
-      if (pCsvFieldValue /* && (*pCsvFieldValue || pFieldMapping->xml.bMandatory)*/) {
-        // check csv value and transform to xml format
-        nReturnCode = MapCsvToXmlValue(pFieldMapping, pCsvFieldValue, szValue, MAX_VALUE_SIZE);
-        SetNodeValue(pDoc, NULL, XPath, szValue, pFieldMapping, pAttributeNameValueList);
-      }
-    }
-
-    if (pFieldMapping->csv.cOperation == 'V'/*VAR*/) {
-      GetVarValue(pFieldMapping, szValue, MAX_VALUE_SIZE);
-      SetNodeValue(pDoc, NULL, XPath, szValue, pFieldMapping);
-    }
-
-    if (strcmp(XPath, "ControlData/UniqueDocumentID") == 0)
-      mystrncpy(szUniqueDocumentID, szValue, MAX_UNIQUE_DOCUMENT_ID_SIZE);
+    return 0;
   }
 
-  return 0;
-}
+  //--------------------------------------------------------------------------------------------------------
 
-//--------------------------------------------------------------------------------------------------------
-
-CPFieldMapping GetFieldMapping(cpchar szXPath)
-{
-  CPFieldMapping pFieldMapping = aFieldMapping;
-
-	for (int i = 0; i < nFieldMappings; i++, pFieldMapping++) 
-		if (strcmp(pFieldMapping->xml.szContent, szXPath) == 0 && pFieldMapping->xml.cOperation == 'M' && pFieldMapping->csv.cOperation == 'M')
-		  return pFieldMapping;
-
-	return NULL;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void GetXPathWithLoopIndices(cpchar pszSourceXPath, char *pszResultXPath)
-{
-  int nLoopIndex, nLoopXPathLen;
-	char szRemainingXPath[MAX_XPATH_SIZE];
-  CPFieldMapping pLoopFieldMapping = NULL;
-
-  // load xpath of current field mapping
-  strcpy(pszResultXPath, pszSourceXPath);
-
-  // insert loop indizes into xpath
-  for (nLoopIndex = nLoops - 1; nLoopIndex >= 0; nLoopIndex--) {
-    pLoopFieldMapping = apLoopFieldMapping[nLoopIndex];
-    // is current loop used in current xpath ?
-    nLoopXPathLen = strlen(pLoopFieldMapping->xml.szContent);
-    if (strncmp(pLoopFieldMapping->xml.szContent, pszResultXPath, nLoopXPathLen) == 0) {
-      // insert loop index to current loop node in xpath
-      strcpy(szRemainingXPath, pszResultXPath + nLoopXPathLen);
-      sprintf(pszResultXPath + nLoopXPathLen, "[%d]%s", anLoopIndex[nLoopIndex] + 1, szRemainingXPath);
-    }
-  }
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int GenerateXmlDocument()
-{
-	xmlNodePtr pRootNode = NULL;
-  xmlNodePtr pLoopNode = NULL;
-  PFieldMapping pFieldMapping = NULL;
-  CPFieldMapping pLoopFieldMapping = NULL;
-  CPFieldMapping pPrevLoopFieldMapping = NULL;
-	char xpath[MAX_XPATH_SIZE];
-  cpchar pCsvFieldValue = NULL;
-  cpchar szLastLoopXPath = NULL;
-  cpchar apLastValues[MAX_LOOPS];
-  cpchar szIgnoreXPath = NULL;
-	pchar pLeftPart = NULL;
-	pchar pOperator = NULL;
-	pchar pRightPart = NULL;
-	CPFieldMapping pLookupFieldMapping = NULL;
-  bool abFirstLoopRecord[MAX_LOOPS];
-  AttributeNameValueList AttrNameValueList;
-  int i, nDataLine, nMapIndex, nLoopIndex;
-  int nFirstLoopMapIndex = -1;
-  int nResult = 0;
-  bool bAddFieldValue, bMap, bMatch, bNewValue;
-
-  AttrNameValueList.nCount = 0;
-  AttrNameValueList.nMaxCount = 16;
-  AttrNameValueList.aAttrNameValue = (AttributeNameValue*)malloc(AttrNameValueList.nMaxCount * sizeof(AttributeNameValue));
-
-	// Creates a new document, a node and set it as a root node
-  pXmlDoc = xmlNewDoc(BAD_CAST "1.0");
-  pRootNode = xmlNewNode(NULL, BAD_CAST "FundsXML4");
-	xmlDocSetRootElement(pXmlDoc, pRootNode);
-  nLoops = 0;
-
-  // set first loop map index to end of field map if no loops existing in mapping definition
-  if (nFirstLoopMapIndex < 0)
-    nFirstLoopMapIndex = nFieldMappings;
-
-  // main loop over all csv lines/records
-  for (nDataLine = 0; nDataLine < nRealCsvDataLines; nDataLine++)
+  int AddXmlField(xmlDocPtr pDoc, CPFieldMapping pFieldMapping, cpchar XPath, int nCsvDataLine, AttributeNameValueList *pAttributeNameValueList = NULL)
   {
-    nCurrentCsvLine = nDataLine + 1;  // for csv error logging
+    char szValue[MAX_VALUE_SIZE] = "";
+    cpchar pCsvFieldValue = NULL;
+    int nReturnCode;
 
-    // initialize column error flags
-    for (i = 0; i < nCsvDataColumns; i++)
-      abColumnError[i] = false;
-
-    if (nDataLine == 0) {
-      // initialize loop indices and last csv values
-      nFirstLoopMapIndex = -1;
-      pFieldMapping = aFieldMapping;
-      for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++) {
-        if (pFieldMapping->xml.cOperation == 'L'/*LOOP*/ && nLoops < MAX_LOOPS)
-        {
-          apLastValues[nLoops] = GetCsvFieldValue(0, pFieldMapping->nCsvIndex);
-          apLoopFieldMapping[nLoops] = pFieldMapping;
-          anLoopIndex[nLoops] = 0;
-          abFirstLoopRecord[nLoops] = true;
-          if (nFirstLoopMapIndex < 0)
-            nFirstLoopMapIndex = nMapIndex;
-          nLoops++;
-        }
-      }
-    }
-    else {
-      // update loop indices
-      for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++) {
-        pLoopFieldMapping = apLoopFieldMapping[nLoopIndex];
-        if (pLoopFieldMapping->nCsvIndex >= 0) {
-          // csv field name found in csv header line --> get content of field
-          pCsvFieldValue = GetCsvFieldValue(nDataLine, pLoopFieldMapping->nCsvIndex);
-          if (pLoopFieldMapping->csv.cOperation == 'U' /*UNIQUE*/)
-            bNewValue = IsNewCsvFieldValue(nDataLine, pLoopFieldMapping->nCsvIndex, pCsvFieldValue);
-          else  // cOperation == 'C' /*CHANGE*/
-            bNewValue = (strcmp(pCsvFieldValue, apLastValues[nLoopIndex]) != 0);
-
-          // has value in corresponding csv column changed?
-          if (bNewValue) {
-            // value in csv column is new --> increment current loop index
-            anLoopIndex[nLoopIndex]++;
-            apLastValues[nLoopIndex] = pCsvFieldValue;
-            abFirstLoopRecord[nLoopIndex] = true;
-
-            // initialize loop indices and last csv values of nested loops
-            for (i = nLoopIndex + 1; i < nLoops; i++) {
-              pFieldMapping = apLoopFieldMapping[i];
-              // is this loop a nested loop?
-              if (strncmp(pFieldMapping->xml.szContent, pLoopFieldMapping->xml.szContent, strlen(pLoopFieldMapping->xml.szContent)) != 0)
-                break;
-              anLoopIndex[i] = 0;
-              apLastValues[i] = GetCsvFieldValue(nDataLine, pFieldMapping->nCsvIndex);
-              abFirstLoopRecord[i] = true;
-            }
-
-            // continue for-loop with current index in i
-            nLoopIndex = i - 1;
-          }
-          else
-            abFirstLoopRecord[nLoopIndex] = false;
-        }
-      }
-    }
-
-    if (bTrace) {
-      // current loop indices
-      printf("Loop indices for csv line %d:", nDataLine);
-      for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++) {
-        pFieldMapping = apLoopFieldMapping[nLoopIndex];
-        printf("  %s: %d/%d", pFieldMapping->csv.szContent, anLoopIndex[nLoopIndex], abFirstLoopRecord[i]);
-      }
-      printf("\n");
-    }
-
-    // loop over all mapping fields
-    for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+    if (pFieldMapping->xml.cOperation == 'M' /*MAP*/)
     {
-      if (nDataLine == 0 || nMapIndex >= nFirstLoopMapIndex)
+      if (pFieldMapping->csv.cOperation == 'F' /*FIX*/)
       {
-        /*
+        SetNodeValue(pDoc, NULL, XPath, pFieldMapping->csv.szContent, pFieldMapping);
+      }
+
+      if (pFieldMapping->csv.cOperation == 'M' /*MAP*/)
+      {
+        // get value of csv field
+        pCsvFieldValue = GetCsvFieldValue(nCsvDataLine, pFieldMapping->nCsvIndex);
+        if (!pCsvFieldValue)
+          pCsvFieldValue = szEmptyString;
+
+        // no csv field value available, but default value defined ?
+        if (!*pCsvFieldValue && *pFieldMapping->csv.szDefault)
+          pCsvFieldValue = pFieldMapping->csv.szDefault; // use default value
+
+        if (pCsvFieldValue /* && (*pCsvFieldValue || pFieldMapping->xml.bMandatory)*/)
+        {
+          // check csv value and transform to xml format
+          nReturnCode = MapCsvToXmlValue(pFieldMapping, pCsvFieldValue, szValue, MAX_VALUE_SIZE);
+          SetNodeValue(pDoc, NULL, XPath, szValue, pFieldMapping, pAttributeNameValueList);
+        }
+      }
+
+      if (pFieldMapping->csv.cOperation == 'V' /*VAR*/)
+      {
+        GetVarValue(pFieldMapping, szValue, MAX_VALUE_SIZE);
+        SetNodeValue(pDoc, NULL, XPath, szValue, pFieldMapping);
+      }
+
+      if (strcmp(XPath, "ControlData/UniqueDocumentID") == 0)
+        mystrncpy(szUniqueDocumentID, szValue, MAX_UNIQUE_DOCUMENT_ID_SIZE);
+    }
+
+    return 0;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  CPFieldMapping GetFieldMapping(cpchar szXPath)
+  {
+    CPFieldMapping pFieldMapping = aFieldMapping;
+
+    for (int i = 0; i < nFieldMappings; i++, pFieldMapping++)
+      if (strcmp(pFieldMapping->xml.szContent, szXPath) == 0 && pFieldMapping->xml.cOperation == 'M' && pFieldMapping->csv.cOperation == 'M')
+        return pFieldMapping;
+
+    return NULL;
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void GetXPathWithLoopIndices(cpchar pszSourceXPath, char *pszResultXPath)
+  {
+    int nLoopIndex, nLoopXPathLen;
+    char szRemainingXPath[MAX_XPATH_SIZE];
+    CPFieldMapping pLoopFieldMapping = NULL;
+
+    // load xpath of current field mapping
+    strcpy(pszResultXPath, pszSourceXPath);
+
+    // insert loop indizes into xpath
+    for (nLoopIndex = nLoops - 1; nLoopIndex >= 0; nLoopIndex--)
+    {
+      pLoopFieldMapping = apLoopFieldMapping[nLoopIndex];
+      // is current loop used in current xpath ?
+      nLoopXPathLen = strlen(pLoopFieldMapping->xml.szContent);
+      if (strncmp(pLoopFieldMapping->xml.szContent, pszResultXPath, nLoopXPathLen) == 0)
+      {
+        // insert loop index to current loop node in xpath
+        strcpy(szRemainingXPath, pszResultXPath + nLoopXPathLen);
+        sprintf(pszResultXPath + nLoopXPathLen, "[%d]%s", anLoopIndex[nLoopIndex] + 1, szRemainingXPath);
+      }
+    }
+  }
+
+  //--------------------------------------------------------------------------------------------------------
+
+  int GenerateXmlDocument()
+  {
+    xmlNodePtr pRootNode = NULL;
+    xmlNodePtr pLoopNode = NULL;
+    PFieldMapping pFieldMapping = NULL;
+    CPFieldMapping pLoopFieldMapping = NULL;
+    CPFieldMapping pPrevLoopFieldMapping = NULL;
+    char xpath[MAX_XPATH_SIZE];
+    cpchar pCsvFieldValue = NULL;
+    cpchar szLastLoopXPath = NULL;
+    cpchar apLastValues[MAX_LOOPS];
+    cpchar szIgnoreXPath = NULL;
+    pchar pLeftPart = NULL;
+    pchar pOperator = NULL;
+    pchar pRightPart = NULL;
+    CPFieldMapping pLookupFieldMapping = NULL;
+    bool abFirstLoopRecord[MAX_LOOPS];
+    AttributeNameValueList AttrNameValueList;
+    int i, nDataLine, nMapIndex, nLoopIndex;
+    int nFirstLoopMapIndex = -1;
+    int nResult = 0;
+    bool bAddFieldValue, bMap, bMatch, bNewValue;
+
+    AttrNameValueList.nCount = 0;
+    AttrNameValueList.nMaxCount = 16;
+    AttrNameValueList.aAttrNameValue = (AttributeNameValue *)malloc(AttrNameValueList.nMaxCount * sizeof(AttributeNameValue));
+
+    // Creates a new document, a node and set it as a root node
+    pXmlDoc = xmlNewDoc(BAD_CAST "1.0");
+    pRootNode = xmlNewNode(NULL, BAD_CAST "FundsXML4");
+    xmlDocSetRootElement(pXmlDoc, pRootNode);
+    nLoops = 0;
+
+    // set first loop map index to end of field map if no loops existing in mapping definition
+    if (nFirstLoopMapIndex < 0)
+      nFirstLoopMapIndex = nFieldMappings;
+
+    // main loop over all csv lines/records
+    for (nDataLine = 0; nDataLine < nRealCsvDataLines; nDataLine++)
+    {
+      nCurrentCsvLine = nDataLine + 1; // for csv error logging
+
+      // initialize column error flags
+      for (i = 0; i < nCsvDataColumns; i++)
+        abColumnError[i] = false;
+
+      if (nDataLine == 0)
+      {
+        // initialize loop indices and last csv values
+        nFirstLoopMapIndex = -1;
+        pFieldMapping = aFieldMapping;
+        for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+        {
+          if (pFieldMapping->xml.cOperation == 'L' /*LOOP*/ && nLoops < MAX_LOOPS)
+          {
+            apLastValues[nLoops] = GetCsvFieldValue(0, pFieldMapping->nCsvIndex);
+            apLoopFieldMapping[nLoops] = pFieldMapping;
+            anLoopIndex[nLoops] = 0;
+            abFirstLoopRecord[nLoops] = true;
+            if (nFirstLoopMapIndex < 0)
+              nFirstLoopMapIndex = nMapIndex;
+            nLoops++;
+          }
+        }
+      }
+      else
+      {
+        // update loop indices
+        for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++)
+        {
+          pLoopFieldMapping = apLoopFieldMapping[nLoopIndex];
+          if (pLoopFieldMapping->nCsvIndex >= 0)
+          {
+            // csv field name found in csv header line --> get content of field
+            pCsvFieldValue = GetCsvFieldValue(nDataLine, pLoopFieldMapping->nCsvIndex);
+            if (pLoopFieldMapping->csv.cOperation == 'U' /*UNIQUE*/)
+              bNewValue = IsNewCsvFieldValue(nDataLine, pLoopFieldMapping->nCsvIndex, pCsvFieldValue);
+            else // cOperation == 'C' /*CHANGE*/
+              bNewValue = (strcmp(pCsvFieldValue, apLastValues[nLoopIndex]) != 0);
+
+            // has value in corresponding csv column changed?
+            if (bNewValue)
+            {
+              // value in csv column is new --> increment current loop index
+              anLoopIndex[nLoopIndex]++;
+              apLastValues[nLoopIndex] = pCsvFieldValue;
+              abFirstLoopRecord[nLoopIndex] = true;
+
+              // initialize loop indices and last csv values of nested loops
+              for (i = nLoopIndex + 1; i < nLoops; i++)
+              {
+                pFieldMapping = apLoopFieldMapping[i];
+                // is this loop a nested loop?
+                if (strncmp(pFieldMapping->xml.szContent, pLoopFieldMapping->xml.szContent, strlen(pLoopFieldMapping->xml.szContent)) != 0)
+                  break;
+                anLoopIndex[i] = 0;
+                apLastValues[i] = GetCsvFieldValue(nDataLine, pFieldMapping->nCsvIndex);
+                abFirstLoopRecord[i] = true;
+              }
+
+              // continue for-loop with current index in i
+              nLoopIndex = i - 1;
+            }
+            else
+              abFirstLoopRecord[nLoopIndex] = false;
+          }
+        }
+      }
+
+      if (bTrace)
+      {
+        // current loop indices
+        printf("Loop indices for csv line %d:", nDataLine);
+        for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++)
+        {
+          pFieldMapping = apLoopFieldMapping[nLoopIndex];
+          printf("  %s: %d/%d", pFieldMapping->csv.szContent, anLoopIndex[nLoopIndex], abFirstLoopRecord[i]);
+        }
+        printf("\n");
+      }
+
+      // loop over all mapping fields
+      for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+      {
+        if (nDataLine == 0 || nMapIndex >= nFirstLoopMapIndex)
+        {
+          /*
         if (nMapIndex >= 58)  // for debugging purposes only!
           i = 0;  // Start of AssetMasterData block
         */
-        // within conditional block to be skipped ?
-        bMap = true;
-        if (szIgnoreXPath) {
-          if (strncmp(pFieldMapping->xml.szContent, szIgnoreXPath, strlen(szIgnoreXPath)) == 0)
-            bMap = false;  // yes, still within conditional block to be skipped
-          else
-            szIgnoreXPath = NULL;  // no, end of conditional block reached
-        }
-        if (bMap) {
-          // start of conditional block ?
-          if (pFieldMapping->xml.cOperation == 'I'/*IF*/) {
-            bMatch = false;
-            pCsvFieldValue = GetCsvFieldValue(nDataLine, pFieldMapping->nCsvIndex);
-            if (pCsvFieldValue) {
-              if (strchr(",.[", pFieldMapping->csv.szFormat[0]) != NULL)  // originally '('
-                bMatch = CheckRegex(pCsvFieldValue, pFieldMapping->csv.szFormat);  // e.g. AssetType matching "(EQ)" (containing "EQ") ?
-              else
-                bMatch = (*pCsvFieldValue != '\0');  // field non-empty ?
-            }
-            if (bMatch && *pFieldMapping->csv.szCondition)
-              bMatch = CheckCsvCondition(nDataLine, pFieldMapping);  // e.g. "CCY != FUND_CCY" or "48_* = '1'"
-            if (!bMatch)
-              szIgnoreXPath = pFieldMapping->xml.szContent;
+          // within conditional block to be skipped ?
+          bMap = true;
+          if (szIgnoreXPath)
+          {
+            if (strncmp(pFieldMapping->xml.szContent, szIgnoreXPath, strlen(szIgnoreXPath)) == 0)
+              bMap = false; // yes, still within conditional block to be skipped
+            else
+              szIgnoreXPath = NULL; // no, end of conditional block reached
           }
-          else
-            if (pFieldMapping->xml.cOperation == 'L'/*LOOP*/) {
+          if (bMap)
+          {
+            // start of conditional block ?
+            if (pFieldMapping->xml.cOperation == 'I' /*IF*/)
+            {
+              bMatch = false;
+              pCsvFieldValue = GetCsvFieldValue(nDataLine, pFieldMapping->nCsvIndex);
+              if (pCsvFieldValue)
+              {
+                if (strchr(",.[", pFieldMapping->csv.szFormat[0]) != NULL)          // originally '('
+                  bMatch = CheckRegex(pCsvFieldValue, pFieldMapping->csv.szFormat); // e.g. AssetType matching "(EQ)" (containing "EQ") ?
+                else
+                  bMatch = (*pCsvFieldValue != '\0'); // field non-empty ?
+              }
+              if (bMatch && *pFieldMapping->csv.szCondition)
+                bMatch = CheckCsvCondition(nDataLine, pFieldMapping); // e.g. "CCY != FUND_CCY" or "48_* = '1'"
+              if (!bMatch)
+                szIgnoreXPath = pFieldMapping->xml.szContent;
+            }
+            else if (pFieldMapping->xml.cOperation == 'L' /*LOOP*/)
+            {
               ; // create new loop node if attribute(s) has to be added
             }
-            else {
+            else
+            {
               bAddFieldValue = true;
               // insert loop indizes into xpath
               xpath[0] = '\0';
               szLastLoopXPath = szEmptyString;
               // check defined loops for usage in current xpath
-              for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++) {
+              for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++)
+              {
                 pLoopFieldMapping = apLoopFieldMapping[nLoopIndex];
-                if (strncmp(pLoopFieldMapping->xml.szContent, pFieldMapping->xml.szContent, strlen(pLoopFieldMapping->xml.szContent)) == 0) {
+                if (strncmp(pLoopFieldMapping->xml.szContent, pFieldMapping->xml.szContent, strlen(pLoopFieldMapping->xml.szContent)) == 0)
+                {
                   // add current loop index to current loop node in xpath
                   sprintf(xpath + strlen(xpath), "%s[%d]", pLoopFieldMapping->xml.szContent + strlen(szLastLoopXPath), anLoopIndex[nLoopIndex] + 1);
                   szLastLoopXPath = pLoopFieldMapping->xml.szContent;
-                  bAddFieldValue = abFirstLoopRecord[nLoopIndex];  // new data to be added to xml document ?
+                  bAddFieldValue = abFirstLoopRecord[nLoopIndex]; // new data to be added to xml document ?
                 }
               }
 
               if (bAddFieldValue && pFieldMapping->csv.cOperation == 'M' && pFieldMapping->nCsvIndex >= 0 && *pFieldMapping->csv.szCondition)
                 bAddFieldValue = CheckCsvCondition(nDataLine, pFieldMapping);
 
-              if (bAddFieldValue) {
+              if (bAddFieldValue)
+              {
                 // add part of current xpath since last loop node
                 if (strlen(pFieldMapping->xml.szContent) > strlen(szLastLoopXPath))
                   strcat(xpath, pFieldMapping->xml.szContent + strlen(szLastLoopXPath));
 
-				        // xml condition like "@ccy = Funds/Fund/Currency" ?
+                // xml condition like "@ccy = Funds/Fund/Currency" ?
                 // or like "((@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@toCcy = Funds/Fund/Currency) and (@mulDiv = 'D')) or ((@fromCcy = Funds/Fund/Currency) and (@toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@mulDiv = 'M'))" ?
-                if (pFieldMapping->xml.Condition.pComplexCondition || pFieldMapping->xml.Condition.pSimpleCondition) {
+                if (pFieldMapping->xml.Condition.pComplexCondition || pFieldMapping->xml.Condition.pSimpleCondition)
+                {
                   GetAttributeList(&AttrNameValueList, &pFieldMapping->xml.Condition);
                   for (i = 0; i < AttrNameValueList.nCount; i++)
-                    if (AttrNameValueList.aAttrNameValue[i].pszXPath) {
-					            pLookupFieldMapping = GetFieldMapping(AttrNameValueList.aAttrNameValue[i].pszXPath);
-					            if (pLookupFieldMapping && pLookupFieldMapping->nCsvIndex >= 0) {
+                    if (AttrNameValueList.aAttrNameValue[i].pszXPath)
+                    {
+                      pLookupFieldMapping = GetFieldMapping(AttrNameValueList.aAttrNameValue[i].pszXPath);
+                      if (pLookupFieldMapping && pLookupFieldMapping->nCsvIndex >= 0)
+                      {
                         pCsvFieldValue = GetCsvFieldValue(nDataLine, pLookupFieldMapping->nCsvIndex);
                         mystrncpy(AttrNameValueList.aAttrNameValue[i].szValue, pCsvFieldValue, MAX_ATTR_VALUE_SIZE);
-					            }
+                      }
                     }
-				        }
+                }
                 else
                   AttrNameValueList.nCount = 0;
 
@@ -3468,21 +3806,21 @@ int GenerateXmlDocument()
                 AddXmlField(pXmlDoc, pFieldMapping, xpath, nDataLine, &AttrNameValueList);
               }
             }
+          }
         }
       }
     }
+
+    if (bTrace)
+      puts("");
+
+    return nResult;
   }
+  // end of function "GenerateXmlDocument"
 
-  if (bTrace)
-    puts("");
+  //--------------------------------------------------------------------------------------------------------
 
-  return nResult;
-}
-// end of function "GenerateXmlDocument"
-
-//--------------------------------------------------------------------------------------------------------
-
-/*
+  /*
 <?xml version="1.0" encoding="UTF-8"?>
 <FundsXML4>
   <ControlData>
@@ -3509,251 +3847,268 @@ int GenerateXmlDocument()
 	    <SingleFundFlag>true</SingleFundFlag>
 */
 
-//--------------------------------------------------------------------------------------------------------
+  //--------------------------------------------------------------------------------------------------------
 
-int ConvertCsvToXml(cpchar szCsvFileName, cpchar szXmlFileName)
-{
-	int i, j, nReturnCode;
+  int ConvertCsvToXml(cpchar szCsvFileName, cpchar szXmlFileName)
+  {
+    int i, j, nReturnCode;
 
-  nErrors = 0;
-  *szLastError = '\0';
+    nErrors = 0;
+    *szLastError = '\0';
 
-  printf("CSV input file: %s\n", szCsvFileName);
-  printf("XML output file: %s\n", szXmlFileName);
-  printf("Error file: %s\n\n", szErrorFileName);
+    printf("CSV input file: %s\n", szCsvFileName);
+    printf("XML output file: %s\n", szXmlFileName);
+    printf("Error file: %s\n\n", szErrorFileName);
 
-  nReturnCode = ReadCsvData(szCsvFileName);
-  printf("CSV Data Columns: %d\nCSV Real Data Lines: %d\n\n", nCsvDataColumns, nRealCsvDataLines);
+    nReturnCode = ReadCsvData(szCsvFileName);
+    printf("CSV Data Columns: %d\nCSV Real Data Lines: %d\n\n", nCsvDataColumns, nRealCsvDataLines);
 
-  nReturnCode = GetCsvDecimalPoint();
+    nReturnCode = GetCsvDecimalPoint();
 
-  if (bTrace) {
-    pchar *pField = aCsvDataFields;
-    for (i = 0; i < nCsvDataLines; i++) {
-      for (j = 0; j < nCsvDataColumns; j++) {
-        if (*pField)
-          printf("%s; ", *pField);
-        pField++;
+    if (bTrace)
+    {
+      pchar *pField = aCsvDataFields;
+      for (i = 0; i < nCsvDataLines; i++)
+      {
+        for (j = 0; j < nCsvDataColumns; j++)
+        {
+          if (*pField)
+            printf("%s; ", *pField);
+          pField++;
+        }
+        puts("");
       }
       puts("");
     }
-    puts("");
+
+    // Sample code: http://xmlsoft.org/examples/index.html
+    nReturnCode = GenerateXmlDocument();
+
+    // Dumping document to stdio or file
+    xmlSaveFormatFileEnc(szXmlFileName, pXmlDoc, "UTF-8", 1);
+    printf("Result written to file '%s'\n\n", szXmlFileName);
+
+    // save counter values (if used)
+    nReturnCode = SaveCounterValues();
+
+    // close error file (if open)
+    if (pErrorFile)
+    {
+      fclose(pErrorFile);
+      pErrorFile = NULL;
+    }
+
+    printf("Number of errors detected: %d\n\n", nErrors);
+
+    // free the xml document
+    xmlFreeDoc(pXmlDoc);
+
+    // free the global variables that may have been allocated by the parser.
+    xmlCleanupParser();
+
+    // free csv buffers used for reading the csv data
+    FreeCsvFileBuffers();
+
+    return nReturnCode;
+  }
+  // end of function "ConvertCsvToXml"
+
+  //--------------------------------------------------------------------------------------------------------
+
+  void CheckUniqueFieldMappings(cpchar pszFieldName, int nLoopIndex)
+  {
+    int nMapIndex;
+    FieldMapping *pFieldMapping = aFieldMapping;
+
+    // set referenced unique loop index in field mappings
+    for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+      if (pFieldMapping->csv.cOperation == 'M' /*MAP*/ && pFieldMapping->xml.cOperation == 'M' /*MAP*/ && strcmp(pFieldMapping->csv.szContent, pszFieldName) == 0)
+        pFieldMapping->nRefUniqueLoopIndex = nLoopIndex;
   }
 
-  // Sample code: http://xmlsoft.org/examples/index.html
-  nReturnCode = GenerateXmlDocument();
+  //--------------------------------------------------------------------------------------------------------
 
-  // Dumping document to stdio or file
-  xmlSaveFormatFileEnc(szXmlFileName, pXmlDoc, "UTF-8", 1);
-  printf("Result written to file '%s'\n\n", szXmlFileName);
+  int GetUniqueLoopNodeIndex(CPFieldMapping pFieldMapping, CPFieldMapping pUniqueFieldMapping, cpchar pszFieldValue, int nLoopSize)
+  {
+    // search node index with current csv value
+    int i, nReturnCode, nIndex = -1;
+    cpchar pXmlFieldValue = NULL;
+    char xpath[MAX_XPATH_SIZE];
+    xmlNodePtr pRootNode = xmlDocGetRootElement(pXmlDoc);
 
-  // save counter values (if used)
-  nReturnCode = SaveCounterValues();
+    // Sample mapping definition:
+    // UNIQUE; "UNIQUE_ID"; M; TEXT; ; 1; 256; ; ; LOOP; "AssetMasterData/Asset"
+    // MAP; "UNIQUE_ID"; M; TEXT; ; 1; 256; ; ; MAP; "AssetMasterData/Asset/UniqueID"; ; TEXT
 
-  // close error file (if open)
-  if (pErrorFile) {
-    fclose(pErrorFile);
-    pErrorFile = NULL;
+    for (i = 0; i < nLoopSize && nIndex < 0; i++)
+    {
+      sprintf(xpath, "%s[%d]%s", pFieldMapping->xml.szContent, i + 1, pUniqueFieldMapping->xml.szContent + strlen(pFieldMapping->xml.szContent));
+      pXmlFieldValue = NULL;
+      nReturnCode = GetNodeTextValue(pRootNode, xpath, &pXmlFieldValue);
+      if (pXmlFieldValue != NULL && strcmp(pXmlFieldValue, pszFieldValue) == 0)
+        nIndex = i;
+    }
+
+    return nIndex;
   }
 
-  printf("Number of errors detected: %d\n\n", nErrors);
+  //--------------------------------------------------------------------------------------------------------
 
-  // free the xml document
-  xmlFreeDoc(pXmlDoc);
-
-  // free the global variables that may have been allocated by the parser.
-  xmlCleanupParser();
-
-  // free csv buffers used for reading the csv data
-  FreeCsvFileBuffers();
-
-	return nReturnCode;
-}
-// end of function "ConvertCsvToXml"
-
-//--------------------------------------------------------------------------------------------------------
-
-void CheckUniqueFieldMappings(cpchar pszFieldName, int nLoopIndex)
-{
-  int nMapIndex;
-  FieldMapping *pFieldMapping = aFieldMapping;
-
-  // set referenced unique loop index in field mappings
-  for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
-    if (pFieldMapping->csv.cOperation == 'M'/*MAP*/ && pFieldMapping->xml.cOperation == 'M'/*MAP*/ && strcmp(pFieldMapping->csv.szContent, pszFieldName) == 0)
-      pFieldMapping->nRefUniqueLoopIndex = nLoopIndex;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int GetUniqueLoopNodeIndex(CPFieldMapping pFieldMapping, CPFieldMapping pUniqueFieldMapping, cpchar pszFieldValue, int nLoopSize)
-{
-	// search node index with current csv value
-  int i, nReturnCode, nIndex = -1;
-  cpchar pXmlFieldValue = NULL;
-  char xpath[MAX_XPATH_SIZE];
-  xmlNodePtr pRootNode = xmlDocGetRootElement(pXmlDoc);
-
-  // Sample mapping definition:
-	// UNIQUE; "UNIQUE_ID"; M; TEXT; ; 1; 256; ; ; LOOP; "AssetMasterData/Asset"
-	// MAP; "UNIQUE_ID"; M; TEXT; ; 1; 256; ; ; MAP; "AssetMasterData/Asset/UniqueID"; ; TEXT
-
-	for (i = 0; i < nLoopSize && nIndex < 0; i++) {
-		sprintf(xpath, "%s[%d]%s", pFieldMapping->xml.szContent, i+1, pUniqueFieldMapping->xml.szContent + strlen(pFieldMapping->xml.szContent));
-		pXmlFieldValue = NULL;
-		nReturnCode = GetNodeTextValue(pRootNode, xpath, &pXmlFieldValue);
-		if (pXmlFieldValue != NULL && strcmp(pXmlFieldValue, pszFieldValue) == 0)
-			nIndex = i;
-	}
-
-  return nIndex;
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void UpdateCurrentConditionValue(SimpleCondition *pSimpleCondition, cpchar *aFieldValue)
-{
-  if (*pSimpleCondition->szRightPart != '\'') {
-		CPFieldMapping pLookupFieldMapping = GetFieldMapping(pSimpleCondition->szRightPart);
-		if (pLookupFieldMapping && pLookupFieldMapping->nCsvIndex >= 0)
-      pSimpleCondition->szCurrentValue = (pchar)aFieldValue[pLookupFieldMapping->nCsvIndex];
-  }
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-void UpdateCurrentConditionValues(Condition *pCondition, cpchar *aFieldValue)
-{
-  if (pCondition->pComplexCondition) {
-    UpdateCurrentConditionValues(&pCondition->pComplexCondition->LeftCondition, aFieldValue);
-    UpdateCurrentConditionValues(&pCondition->pComplexCondition->RightCondition, aFieldValue);
-  }
-  else
-    UpdateCurrentConditionValue(pCondition->pSimpleCondition, aFieldValue);
-}
-
-//--------------------------------------------------------------------------------------------------------
-
-int WriteCsvFile(cpchar szFileName)
-{
-  int i, nIndex, nColumnIndex, nMapIndex, nLoopIndex, nIncrementedLoopIndex; //j, nLoopMapIndex, nLoopEndMapIndex, nLoopFields, nLoopXPathLen, nXPathLen, nXPathOffset;
-  int nReturnCode = 0;
-  int nDataLine = 0;
-  char *pColumnName = NULL;
-  char *pFieldValueBufferPos = NULL;
-  char szTempFieldValue[MAX_VALUE_SIZE];
-  cpchar aFieldValue[MAX_CSV_COLUMNS];
-  FILE *pFile = NULL;
-  errno_t error_code;
-  xmlNodePtr pNode;
-  char xpath[MAX_XPATH_SIZE];
-  char xpath2[MAX_XPATH_SIZE];
-	cpchar pCsvFieldName = NULL;
-	cpchar pCsvFieldValue = NULL;
-  cpchar pXmlFieldValue = NULL;
-  cpchar szIgnoreXPath = NULL;
-  cpchar szLastLoopXPath = NULL;
-  cpchar szIncrementedXPath = NULL;
-	pchar pLeftPart = NULL;
-	pchar pOperator = NULL;
-	pchar pRightPart = NULL;
-  FieldMapping *pFieldMapping = NULL;
-	CPFieldMapping pLookupFieldMapping = NULL;
-	CPFieldMapping pLoopFieldMapping = NULL;
-	PFieldMapping pSourceFieldMapping = NULL;
-  CPFieldMapping pUniqueFieldMapping = NULL;
-  bool bMap, bMatch, bLoopData;
-
-  // open file in write mode
-  error_code = fopen_s(&pFile, szFileName, "w");
-  if (!pFile) {
-    printf("Cannot open file '%s' (error code %d)\n", szFileName, error_code);
-    return -2;
-  }
-
-  // write template header to file
-  fprintf(pFile, "%s\n", szCsvHeader);
-
-  // write second header line, if existing
-  if (*szCsvHeader2)
-    fprintf(pFile, "%s\n", szCsvHeader2);
-
-  // get root node of xml document
-  xmlNodePtr pRootNode = xmlDocGetRootElement(pXmlDoc);
-
-  // initialize loop indices and last csv values
-  nLoops = 0;
-  pFieldMapping = aFieldMapping;
-  for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++) {
-    // initialize loop indices
-    pFieldMapping->nLoopIndex = -1;
-    pFieldMapping->nRefUniqueLoopIndex = -1;
-
-    if (pFieldMapping->xml.cOperation == 'L'/*LOOP*/ && nLoops < MAX_LOOPS) {
-      pFieldMapping->nLoopIndex = nLoops;
-      apLoopFieldMapping[nLoops] = pFieldMapping;
-      anLoopIndex[nLoops] = 0;
-      if (pFieldMapping->csv.cOperation == 'U'/*UNIQUE*/)
-        CheckUniqueFieldMappings(pFieldMapping->csv.szContent, nLoops);
-      anLoopSize[nLoops] = GetNodeCount(pRootNode, pFieldMapping->xml.szContent);
-      nLoops++;
-      if (bTrace)
-        printf("Loop %d: MapIndex %d, XPath %s, NodeCount %d\n", nLoops, nMapIndex, pFieldMapping->xml.szContent, anLoopSize[nLoops - 1]);
+  void UpdateCurrentConditionValue(SimpleCondition *pSimpleCondition, cpchar *aFieldValue)
+  {
+    if (*pSimpleCondition->szRightPart != '\'')
+    {
+      CPFieldMapping pLookupFieldMapping = GetFieldMapping(pSimpleCondition->szRightPart);
+      if (pLookupFieldMapping && pLookupFieldMapping->nCsvIndex >= 0)
+        pSimpleCondition->szCurrentValue = (pchar)aFieldValue[pLookupFieldMapping->nCsvIndex];
     }
   }
 
-  if (bTrace)
-    puts("");
+  //--------------------------------------------------------------------------------------------------------
 
-  bLoopData = true;
+  void UpdateCurrentConditionValues(Condition *pCondition, cpchar *aFieldValue)
+  {
+    if (pCondition->pComplexCondition)
+    {
+      UpdateCurrentConditionValues(&pCondition->pComplexCondition->LeftCondition, aFieldValue);
+      UpdateCurrentConditionValues(&pCondition->pComplexCondition->RightCondition, aFieldValue);
+    }
+    else
+      UpdateCurrentConditionValue(pCondition->pSimpleCondition, aFieldValue);
+  }
 
-  while (bLoopData) {
-    // next csv line
-    nDataLine++;
-    nCurrentCsvLine = nDataLine;  // for csv error logging
+  //--------------------------------------------------------------------------------------------------------
 
-    //char szFieldValueBuffer[MAX_LINE_SIZE];
-    pFieldValueBufferPos = szFieldValueBuffer;
-    szIgnoreXPath = NULL;
+  int WriteCsvFile(cpchar szFileName)
+  {
+    int i, nIndex, nColumnIndex, nMapIndex, nLoopIndex, nIncrementedLoopIndex; //j, nLoopMapIndex, nLoopEndMapIndex, nLoopFields, nLoopXPathLen, nXPathLen, nXPathOffset;
+    int nReturnCode = 0;
+    int nDataLine = 0;
+    char *pColumnName = NULL;
+    char *pFieldValueBufferPos = NULL;
+    char szTempFieldValue[MAX_VALUE_SIZE];
+    cpchar aFieldValue[MAX_CSV_COLUMNS];
+    FILE *pFile = NULL;
+    errno_t error_code;
+    xmlNodePtr pNode;
+    char xpath[MAX_XPATH_SIZE];
+    char xpath2[MAX_XPATH_SIZE];
+    cpchar pCsvFieldName = NULL;
+    cpchar pCsvFieldValue = NULL;
+    cpchar pXmlFieldValue = NULL;
+    cpchar szIgnoreXPath = NULL;
+    cpchar szLastLoopXPath = NULL;
+    cpchar szIncrementedXPath = NULL;
+    pchar pLeftPart = NULL;
+    pchar pOperator = NULL;
+    pchar pRightPart = NULL;
+    FieldMapping *pFieldMapping = NULL;
+    CPFieldMapping pLookupFieldMapping = NULL;
+    CPFieldMapping pLoopFieldMapping = NULL;
+    PFieldMapping pSourceFieldMapping = NULL;
+    CPFieldMapping pUniqueFieldMapping = NULL;
+    bool bMap, bMatch, bLoopData;
 
-    // initialize list of csv field contents with empty strings
-    for (i = 0; i < nCsvDataColumns; i++)
-      aFieldValue[i] = szEmptyString;
-
-    // initialize unique loop node indeces
-    for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++)
-      if (apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'U'/*UNIQUE*/)
-        anLoopIndex[nLoopIndex] = -1;
-
-    // reset csv and xml values in mapping definition
-    for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++) {
-      pFieldMapping->csv.szValue = NULL;
-      pFieldMapping->xml.szValue = NULL;
+    // open file in write mode
+    error_code = fopen_s(&pFile, szFileName, "w");
+    if (!pFile)
+    {
+      printf("Cannot open file '%s' (error code %d)\n", szFileName, error_code);
+      return -2;
     }
 
-    // get list of csv field contents
-    for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++) {
-      //if (strcmp(pFieldMapping->csv.szContent2, "67_*") == 0)
-      //  bMap = false;  // for debugging purposes only!
+    // write template header to file
+    fprintf(pFile, "%s\n", szCsvHeader);
 
-      // within conditional block to be skipped ?
-      bMap = true;
-      if (szIgnoreXPath) {
-        if (strncmp(pFieldMapping->xml.szContent, szIgnoreXPath, strlen(szIgnoreXPath)) == 0)
-          bMap = false;  // yes, still within conditional block to be skipped
-        else
-          szIgnoreXPath = NULL;  // no, end of conditional block reached
+    // write second header line, if existing
+    if (*szCsvHeader2)
+      fprintf(pFile, "%s\n", szCsvHeader2);
+
+    // get root node of xml document
+    xmlNodePtr pRootNode = xmlDocGetRootElement(pXmlDoc);
+
+    // initialize loop indices and last csv values
+    nLoops = 0;
+    pFieldMapping = aFieldMapping;
+    for (nMapIndex = 0; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+    {
+      // initialize loop indices
+      pFieldMapping->nLoopIndex = -1;
+      pFieldMapping->nRefUniqueLoopIndex = -1;
+
+      if (pFieldMapping->xml.cOperation == 'L' /*LOOP*/ && nLoops < MAX_LOOPS)
+      {
+        pFieldMapping->nLoopIndex = nLoops;
+        apLoopFieldMapping[nLoops] = pFieldMapping;
+        anLoopIndex[nLoops] = 0;
+        if (pFieldMapping->csv.cOperation == 'U' /*UNIQUE*/)
+          CheckUniqueFieldMappings(pFieldMapping->csv.szContent, nLoops);
+        anLoopSize[nLoops] = GetNodeCount(pRootNode, pFieldMapping->xml.szContent);
+        nLoops++;
+        if (bTrace)
+          printf("Loop %d: MapIndex %d, XPath %s, NodeCount %d\n", nLoops, nMapIndex, pFieldMapping->xml.szContent, anLoopSize[nLoops - 1]);
       }
-      if (bMap) {
-        // start of conditional block ?
-        if (pFieldMapping->xml.cOperation == 'I'/*IF*/ /*&& pFieldMapping->nSourceMapIndex >= 0*/) {
-          bMatch = false;
-          if (!IsEmptyString(pFieldMapping->xml.szContent)) {
-            GetXPathWithLoopIndices(pFieldMapping->xml.szContent, xpath);
-            pNode = GetNode(pRootNode, xpath);
-            bMatch = (pNode != NULL);
-          }
-          /*
+    }
+
+    if (bTrace)
+      puts("");
+
+    bLoopData = true;
+
+    while (bLoopData)
+    {
+      // next csv line
+      nDataLine++;
+      nCurrentCsvLine = nDataLine; // for csv error logging
+
+      //char szFieldValueBuffer[MAX_LINE_SIZE];
+      pFieldValueBufferPos = szFieldValueBuffer;
+      szIgnoreXPath = NULL;
+
+      // initialize list of csv field contents with empty strings
+      for (i = 0; i < nCsvDataColumns; i++)
+        aFieldValue[i] = szEmptyString;
+
+      // initialize unique loop node indeces
+      for (nLoopIndex = 0; nLoopIndex < nLoops; nLoopIndex++)
+        if (apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'U' /*UNIQUE*/)
+          anLoopIndex[nLoopIndex] = -1;
+
+      // reset csv and xml values in mapping definition
+      for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+      {
+        pFieldMapping->csv.szValue = NULL;
+        pFieldMapping->xml.szValue = NULL;
+      }
+
+      // get list of csv field contents
+      for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
+      {
+        //if (strcmp(pFieldMapping->csv.szContent2, "67_*") == 0)
+        //  bMap = false;  // for debugging purposes only!
+
+        // within conditional block to be skipped ?
+        bMap = true;
+        if (szIgnoreXPath)
+        {
+          if (strncmp(pFieldMapping->xml.szContent, szIgnoreXPath, strlen(szIgnoreXPath)) == 0)
+            bMap = false; // yes, still within conditional block to be skipped
+          else
+            szIgnoreXPath = NULL; // no, end of conditional block reached
+        }
+        if (bMap)
+        {
+          // start of conditional block ?
+          if (pFieldMapping->xml.cOperation == 'I' /*IF*/ /*&& pFieldMapping->nSourceMapIndex >= 0*/)
+          {
+            bMatch = false;
+            if (!IsEmptyString(pFieldMapping->xml.szContent))
+            {
+              GetXPathWithLoopIndices(pFieldMapping->xml.szContent, xpath);
+              pNode = GetNode(pRootNode, xpath);
+              bMatch = (pNode != NULL);
+            }
+            /*
           pSourceFieldMapping = aFieldMapping + pFieldMapping->nSourceMapIndex;
           // load field content from: nSourceMapIndex
           if (pSourceFieldMapping->xml.szValue == NULL) {
@@ -3772,506 +4127,541 @@ int WriteCsvFile(cpchar szFileName)
           if (bMatch && *pFieldMapping->csv.szCondition)
             bMatch = CheckCsvCondition(nDataLine, pFieldMapping);
           */
-          if (!bMatch)
-            szIgnoreXPath = pFieldMapping->xml.szContent;
-        }
-
-        if (pFieldMapping->nCsvIndex >= 0 && strchr("FMV"/*Fix,Map,Var*/, pFieldMapping->xml.cOperation))
-        {
-          GetXPathWithLoopIndices(pFieldMapping->xml.szContent, xpath);
-
-				  // xml condition like "@ccy = Funds/Fund/Currency" ?
-          // or like "((@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@toCcy = Funds/Fund/Currency) and (@mulDiv = 'D')) or ((@fromCcy = Funds/Fund/Currency) and (@toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@mulDiv = 'M'))" ?
-          if (pFieldMapping->xml.Condition.pComplexCondition || pFieldMapping->xml.Condition.pSimpleCondition)
-            UpdateCurrentConditionValues(&pFieldMapping->xml.Condition, aFieldValue);
-
-          pXmlFieldValue = NULL;
-          //if (strcmp(pFieldMapping->csv.szContent, "CCY") == 0)
-          //  i = 0;  // for debugging purposes only!
-
-          // get content of xml field
-          nReturnCode = GetNodeTextValue(pRootNode, xpath, &pXmlFieldValue, &pFieldMapping->xml.Condition);
-          if (pXmlFieldValue) {
-            *pFieldValueBufferPos = '\0';
-            // map content of xml field to csv format
-            nReturnCode = MapXmlToCsvValue(pFieldMapping, pXmlFieldValue, xpath, pFieldValueBufferPos, MAX_LINE_LEN - (pFieldValueBufferPos - szFieldValueBuffer + 2));
-
-            if (pFieldMapping->nCsvIndex >= 0 && abColumnQuoted[pFieldMapping->nCsvIndex] && strlen(pFieldValueBufferPos) < MAX_VALUE_SIZE) {
-              // add quotes at the beginning and end of csv value
-              strcpy(szTempFieldValue, pFieldValueBufferPos);
-              strcpy(pFieldValueBufferPos, "\"");
-              strcat(pFieldValueBufferPos, szTempFieldValue);
-              strcat(pFieldValueBufferPos, "\"");
-            }
-
-            // add content of csv field to csv buffer
-            aFieldValue[pFieldMapping->nCsvIndex] = pFieldValueBufferPos;
-            pFieldValueBufferPos += strlen(pFieldValueBufferPos) + 1;
-
-            // is content of this field used for unique loop ?
-            if (pFieldMapping->nRefUniqueLoopIndex >= 0 && anLoopIndex[pFieldMapping->nRefUniqueLoopIndex] < 0) {
-              pLoopFieldMapping = apLoopFieldMapping[pFieldMapping->nRefUniqueLoopIndex];
-				      pUniqueFieldMapping = pLoopFieldMapping + 1;  // mapping for content of unique field
-              pCsvFieldValue = aFieldValue[pFieldMapping->nCsvIndex];
-              nIndex = GetUniqueLoopNodeIndex(pLoopFieldMapping, pUniqueFieldMapping, pCsvFieldValue, anLoopSize[pLoopFieldMapping->nLoopIndex]);
-				      if (nIndex >= 0)
-					      anLoopIndex[pLoopFieldMapping->nLoopIndex] = nIndex;
-			      }
-
-            if (bTrace)
-              printf("Line %d: MapIndex %d, Column %d, Field %s, Value '%s', XPath %s\n", nDataLine, nMapIndex, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXmlFieldValue, xpath);
+            if (!bMatch)
+              szIgnoreXPath = pFieldMapping->xml.szContent;
           }
-          else
-            if (pFieldMapping->xml.bMandatory)
+
+          if (pFieldMapping->nCsvIndex >= 0 && strchr("FMV" /*Fix,Map,Var*/, pFieldMapping->xml.cOperation))
+          {
+            GetXPathWithLoopIndices(pFieldMapping->xml.szContent, xpath);
+
+            // xml condition like "@ccy = Funds/Fund/Currency" ?
+            // or like "((@fromCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@toCcy = Funds/Fund/Currency) and (@mulDiv = 'D')) or ((@fromCcy = Funds/Fund/Currency) and (@toCcy = Funds/Fund/FundDynamicData/Portfolios/Portfolio/Positions/Position/Currency) and (@mulDiv = 'M'))" ?
+            if (pFieldMapping->xml.Condition.pComplexCondition || pFieldMapping->xml.Condition.pSimpleCondition)
+              UpdateCurrentConditionValues(&pFieldMapping->xml.Condition, aFieldValue);
+
+            pXmlFieldValue = NULL;
+            //if (strcmp(pFieldMapping->csv.szContent, "CCY") == 0)
+            //  i = 0;  // for debugging purposes only!
+
+            // get content of xml field
+            nReturnCode = GetNodeTextValue(pRootNode, xpath, &pXmlFieldValue, &pFieldMapping->xml.Condition);
+            if (pXmlFieldValue)
+            {
+              *pFieldValueBufferPos = '\0';
+              // map content of xml field to csv format
+              nReturnCode = MapXmlToCsvValue(pFieldMapping, pXmlFieldValue, xpath, pFieldValueBufferPos, MAX_LINE_LEN - (pFieldValueBufferPos - szFieldValueBuffer + 2));
+
+              if (pFieldMapping->nCsvIndex >= 0 && abColumnQuoted[pFieldMapping->nCsvIndex] && strlen(pFieldValueBufferPos) < MAX_VALUE_SIZE)
+              {
+                // add quotes at the beginning and end of csv value
+                strcpy(szTempFieldValue, pFieldValueBufferPos);
+                strcpy(pFieldValueBufferPos, "\"");
+                strcat(pFieldValueBufferPos, szTempFieldValue);
+                strcat(pFieldValueBufferPos, "\"");
+              }
+
+              // add content of csv field to csv buffer
+              aFieldValue[pFieldMapping->nCsvIndex] = pFieldValueBufferPos;
+              pFieldValueBufferPos += strlen(pFieldValueBufferPos) + 1;
+
+              // is content of this field used for unique loop ?
+              if (pFieldMapping->nRefUniqueLoopIndex >= 0 && anLoopIndex[pFieldMapping->nRefUniqueLoopIndex] < 0)
+              {
+                pLoopFieldMapping = apLoopFieldMapping[pFieldMapping->nRefUniqueLoopIndex];
+                pUniqueFieldMapping = pLoopFieldMapping + 1; // mapping for content of unique field
+                pCsvFieldValue = aFieldValue[pFieldMapping->nCsvIndex];
+                nIndex = GetUniqueLoopNodeIndex(pLoopFieldMapping, pUniqueFieldMapping, pCsvFieldValue, anLoopSize[pLoopFieldMapping->nLoopIndex]);
+                if (nIndex >= 0)
+                  anLoopIndex[pLoopFieldMapping->nLoopIndex] = nIndex;
+              }
+
+              if (bTrace)
+                printf("Line %d: MapIndex %d, Column %d, Field %s, Value '%s', XPath %s\n", nDataLine, nMapIndex, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, pXmlFieldValue, xpath);
+            }
+            else if (pFieldMapping->xml.bMandatory)
               LogXmlError(nDataLine, pFieldMapping->nCsvIndex, pFieldMapping->csv.szContent, xpath, szEmptyString, "Mandatory field/node missing");
-        }
+          }
 
-			  if (pFieldMapping->nCsvIndex >= 0 && pFieldMapping->csv.cOperation == 'U'/*UNIQUE*/ && anLoopIndex[pFieldMapping->nLoopIndex] < 0) {
-				  pUniqueFieldMapping = pFieldMapping + 1;  // mapping for content of unique field
-          pCsvFieldValue = aFieldValue[pFieldMapping->nCsvIndex];
-          nIndex = GetUniqueLoopNodeIndex(pFieldMapping, pUniqueFieldMapping, pCsvFieldValue, anLoopSize[pFieldMapping->nLoopIndex]);
-				  if (nIndex >= 0)
-					  anLoopIndex[pFieldMapping->nLoopIndex] = nIndex;
-			  }
-      }
-		}
-
-    // fill line buffer with field contents
-    strcpy(szLineBuffer, aFieldValue[0]);
-    for (i = 1; i < nCsvDataColumns; i++)
-      if (strlen(szLineBuffer) + strlen(aFieldValue[i]) < MAX_LINE_LEN)
-        sprintf(szLineBuffer + strlen(szLineBuffer), "%c%s", cColumnDelimiter, aFieldValue[i]);
-    strcat(szLineBuffer, "\n");
-
-    // write template header to file
-    fputs(szLineBuffer, pFile);
-    if (bTrace)
-      printf("%d: %s", nDataLine, szLineBuffer);
-
-    // increment loop indices
-    nIncrementedLoopIndex = -1;
-    for (nLoopIndex = nLoops - 1; nLoopIndex >= 0 && nIncrementedLoopIndex < 0; nLoopIndex--) {
-      if (anLoopSize[nLoopIndex] > 0 && apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'C'/*CHANGE*/)
-        if (anLoopIndex[nLoopIndex] < anLoopSize[nLoopIndex] - 1) {
-          // increment loop index
-          anLoopIndex[nLoopIndex]++;
-          nIncrementedLoopIndex = nLoopIndex;
-          nColumnIndex = apLoopFieldMapping[nLoopIndex--]->nCsvIndex;
-          // are there loops existing triggered by the same csv column ?
-          while (nColumnIndex >= 0 && nLoopIndex >= 0) {
-            if (apLoopFieldMapping[nLoopIndex]->nCsvIndex == nColumnIndex && apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'C'/*CHANGE*/) {
-              // increment loop(s) with same connected csv column (they must be aligned)
-              anLoopIndex[nLoopIndex]++;
-              nIncrementedLoopIndex = nLoopIndex;
-            }
-            nLoopIndex--;
+          if (pFieldMapping->nCsvIndex >= 0 && pFieldMapping->csv.cOperation == 'U' /*UNIQUE*/ && anLoopIndex[pFieldMapping->nLoopIndex] < 0)
+          {
+            pUniqueFieldMapping = pFieldMapping + 1; // mapping for content of unique field
+            pCsvFieldValue = aFieldValue[pFieldMapping->nCsvIndex];
+            nIndex = GetUniqueLoopNodeIndex(pFieldMapping, pUniqueFieldMapping, pCsvFieldValue, anLoopSize[pFieldMapping->nLoopIndex]);
+            if (nIndex >= 0)
+              anLoopIndex[pFieldMapping->nLoopIndex] = nIndex;
           }
         }
+      }
+
+      // fill line buffer with field contents
+      strcpy(szLineBuffer, aFieldValue[0]);
+      for (i = 1; i < nCsvDataColumns; i++)
+        if (strlen(szLineBuffer) + strlen(aFieldValue[i]) < MAX_LINE_LEN)
+          sprintf(szLineBuffer + strlen(szLineBuffer), "%c%s", cColumnDelimiter, aFieldValue[i]);
+      strcat(szLineBuffer, "\n");
+
+      // write template header to file
+      fputs(szLineBuffer, pFile);
+      if (bTrace)
+        printf("%d: %s", nDataLine, szLineBuffer);
+
+      // increment loop indices
+      nIncrementedLoopIndex = -1;
+      for (nLoopIndex = nLoops - 1; nLoopIndex >= 0 && nIncrementedLoopIndex < 0; nLoopIndex--)
+      {
+        if (anLoopSize[nLoopIndex] > 0 && apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'C' /*CHANGE*/)
+          if (anLoopIndex[nLoopIndex] < anLoopSize[nLoopIndex] - 1)
+          {
+            // increment loop index
+            anLoopIndex[nLoopIndex]++;
+            nIncrementedLoopIndex = nLoopIndex;
+            nColumnIndex = apLoopFieldMapping[nLoopIndex--]->nCsvIndex;
+            // are there loops existing triggered by the same csv column ?
+            while (nColumnIndex >= 0 && nLoopIndex >= 0)
+            {
+              if (apLoopFieldMapping[nLoopIndex]->nCsvIndex == nColumnIndex && apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'C' /*CHANGE*/)
+              {
+                // increment loop(s) with same connected csv column (they must be aligned)
+                anLoopIndex[nLoopIndex]++;
+                nIncrementedLoopIndex = nLoopIndex;
+              }
+              nLoopIndex--;
+            }
+          }
         /*else {
           anLoopIndex[nLoopIndex] = -1;
           anLoopSize[nLoopIndex] = -1;
         }*/
-    }
+      }
 
-    if (nIncrementedLoopIndex < 0)
-      bLoopData = false;  // no more data found to add to result csv file
-    else {
-      // insert node indices into xpath till current loop index
-      xpath[0] = '\0';
-      szLastLoopXPath = szEmptyString;
-      szIncrementedXPath = apLoopFieldMapping[nIncrementedLoopIndex]->xml.szContent;
-      for (i = 0; i <= nIncrementedLoopIndex; i++) {
-        pFieldMapping = apLoopFieldMapping[i];
-        if (anLoopSize[i] > 0 && strncmp(szIncrementedXPath, pFieldMapping->xml.szContent, strlen(pFieldMapping->xml.szContent)) == 0) {
-          sprintf(xpath + strlen(xpath), "%s[%d]", pFieldMapping->xml.szContent + strlen(szLastLoopXPath), anLoopIndex[i] + 1);
-          szLastLoopXPath = pFieldMapping->xml.szContent;
+      if (nIncrementedLoopIndex < 0)
+        bLoopData = false; // no more data found to add to result csv file
+      else
+      {
+        // insert node indices into xpath till current loop index
+        xpath[0] = '\0';
+        szLastLoopXPath = szEmptyString;
+        szIncrementedXPath = apLoopFieldMapping[nIncrementedLoopIndex]->xml.szContent;
+        for (i = 0; i <= nIncrementedLoopIndex; i++)
+        {
+          pFieldMapping = apLoopFieldMapping[i];
+          if (anLoopSize[i] > 0 && strncmp(szIncrementedXPath, pFieldMapping->xml.szContent, strlen(pFieldMapping->xml.szContent)) == 0)
+          {
+            sprintf(xpath + strlen(xpath), "%s[%d]", pFieldMapping->xml.szContent + strlen(szLastLoopXPath), anLoopIndex[i] + 1);
+            szLastLoopXPath = pFieldMapping->xml.szContent;
+          }
+        }
+        // get new node counts behind current loop node
+        for (nLoopIndex = nIncrementedLoopIndex + 1; nLoopIndex < nLoops; nLoopIndex++)
+        {
+          pFieldMapping = apLoopFieldMapping[nLoopIndex];
+          if (strncmp(pFieldMapping->xml.szContent, szLastLoopXPath, strlen(szLastLoopXPath)) == 0)
+          {
+            sprintf(xpath2, "%s%s", xpath, pFieldMapping->xml.szContent + strlen(szLastLoopXPath));
+            anLoopIndex[nLoopIndex] = 0;
+            anLoopSize[nLoopIndex] = GetNodeCount(pRootNode, xpath2);
+          }
+        }
+        // are there loops existing triggered by the same csv column ?
+        nLoopIndex = nIncrementedLoopIndex + 1;
+        while (nColumnIndex >= 0 && nLoopIndex < nLoops)
+        {
+          if (apLoopFieldMapping[nLoopIndex]->nCsvIndex == nColumnIndex)
+            if (apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'C' /*CHANGE*/)
+            {
+              //anLoopIndex[nLoopIndex]++;  // increment loop(s) with same connected csv column (they must be aligned)
+              anLoopIndex[nLoopIndex] = anLoopIndex[nIncrementedLoopIndex]; // align loop index of loops connected to same csv column
+            }
+          nLoopIndex++;
         }
       }
-      // get new node counts behind current loop node
-      for (nLoopIndex = nIncrementedLoopIndex + 1; nLoopIndex < nLoops; nLoopIndex++) {
-        pFieldMapping = apLoopFieldMapping[nLoopIndex];
-        if (strncmp(pFieldMapping->xml.szContent, szLastLoopXPath, strlen(szLastLoopXPath)) == 0) {
-          sprintf(xpath2, "%s%s", xpath, pFieldMapping->xml.szContent + strlen(szLastLoopXPath));
-          anLoopIndex[nLoopIndex] = 0;
-          anLoopSize[nLoopIndex] = GetNodeCount(pRootNode, xpath2);
-        }
-      }
-      // are there loops existing triggered by the same csv column ?
-      nLoopIndex = nIncrementedLoopIndex + 1;
-      while (nColumnIndex >= 0 && nLoopIndex < nLoops) {
-        if (apLoopFieldMapping[nLoopIndex]->nCsvIndex == nColumnIndex)
-				  if (apLoopFieldMapping[nLoopIndex]->csv.cOperation == 'C'/*CHANGE*/) {
-						//anLoopIndex[nLoopIndex]++;  // increment loop(s) with same connected csv column (they must be aligned)
-						anLoopIndex[nLoopIndex] = anLoopIndex[nIncrementedLoopIndex];  // align loop index of loops connected to same csv column
-					}
-				nLoopIndex++;
-      }
     }
+
+    // close file
+    fclose(pFile);
+
+    nRealCsvDataLines = nDataLine;
+    return nReturnCode;
   }
+  // end of funtion "WriteCsvFile"
 
-  // close file
-  fclose(pFile);
+  //--------------------------------------------------------------------------------------------------------
 
-  nRealCsvDataLines = nDataLine;
-  return nReturnCode;
-}
-// end of funtion "WriteCsvFile"
+  int ConvertXmlToCsv(cpchar szXmlFileName, cpchar szCsvTemplateFileName, cpchar szCsvResultFileName)
+  {
+    int i, j, nReturnCode;
+    cpchar pszValue = NULL;
+    //char szValue[MAX_VALUE_SIZE];
 
-//--------------------------------------------------------------------------------------------------------
+    nErrors = 0;
+    *szLastError = '\0';
+    *szUniqueDocumentID = '\0';
 
-int ConvertXmlToCsv(cpchar szXmlFileName, cpchar szCsvTemplateFileName, cpchar szCsvResultFileName)
-{
-	int i, j, nReturnCode;
-  cpchar pszValue = NULL;
-  //char szValue[MAX_VALUE_SIZE];
+    printf("XML input file: %s\n", szXmlFileName);
+    printf("CSV template file: %s\n", szCsvTemplateFileName);
+    printf("CSV output file: %s\n", szCsvResultFileName);
+    printf("Error file: %s\n\n", szErrorFileName);
 
-  nErrors = 0;
-  *szLastError = '\0';
-  *szUniqueDocumentID = '\0';
+    // read source xml file
+    //xmlDocPtr	xmlReadMemory (const char * buffer, int size, const char * URL, const char * encoding, int options)
+    //xmlDocPtr	xmlReadFile (const char * filename, const char * encoding, int options)
+    pXmlDoc = xmlReadFile(szXmlFileName, NULL, 0);
 
-  printf("XML input file: %s\n", szXmlFileName);
-  printf("CSV template file: %s\n", szCsvTemplateFileName);
-  printf("CSV output file: %s\n", szCsvResultFileName);
-  printf("Error file: %s\n\n", szErrorFileName);
+    xmlNodePtr pRootNode = xmlDocGetRootElement(pXmlDoc);
+    nReturnCode = GetNodeTextValue(pRootNode, "ControlData/UniqueDocumentID", &pszValue);
+    if (pszValue)
+    {
+      printf("Content of ControlData/UniqueDocumentID: %s\n\n", pszValue);
+      mystrncpy(szUniqueDocumentID, pszValue, MAX_UNIQUE_DOCUMENT_ID_SIZE);
+    }
+    else
+      puts("Node ControlData/UniqueDocumentID not found.\n");
 
-  // read source xml file
-  //xmlDocPtr	xmlReadMemory (const char * buffer, int size, const char * URL, const char * encoding, int options)
-  //xmlDocPtr	xmlReadFile (const char * filename, const char * encoding, int options)
-  pXmlDoc = xmlReadFile(szXmlFileName, NULL, 0);
+    // read csv template file
+    nReturnCode = ReadCsvData(szCsvTemplateFileName);
+    printf("CSV Data Columns: %d\nCSV Template Lines: %d\n\n", nCsvDataColumns, nRealCsvDataLines);
 
-  xmlNodePtr pRootNode = xmlDocGetRootElement(pXmlDoc);
-  nReturnCode = GetNodeTextValue(pRootNode, "ControlData/UniqueDocumentID", &pszValue);
-  if (pszValue) {
-    printf("Content of ControlData/UniqueDocumentID: %s\n\n", pszValue);
-    mystrncpy(szUniqueDocumentID, pszValue, MAX_UNIQUE_DOCUMENT_ID_SIZE);
-  }
-  else
-    puts("Node ControlData/UniqueDocumentID not found.\n");
+    nReturnCode = GetCsvDecimalPoint();
 
-  // read csv template file
-  nReturnCode = ReadCsvData(szCsvTemplateFileName);
-  printf("CSV Data Columns: %d\nCSV Template Lines: %d\n\n", nCsvDataColumns, nRealCsvDataLines);
-
-  nReturnCode = GetCsvDecimalPoint();
-
-  if (bTrace) {
-    pchar *pField = aCsvDataFields;
-    for (i = 0; i < nCsvDataLines; i++) {
-      for (j = 0; j < nCsvDataColumns; j++) {
-        if (*pField)
-          printf("%s; ", *pField);
-        pField++;
+    if (bTrace)
+    {
+      pchar *pField = aCsvDataFields;
+      for (i = 0; i < nCsvDataLines; i++)
+      {
+        for (j = 0; j < nCsvDataColumns; j++)
+        {
+          if (*pField)
+            printf("%s; ", *pField);
+          pField++;
+        }
+        puts("");
       }
       puts("");
     }
-    puts("");
+
+    // write csv result file
+    nReturnCode = WriteCsvFile(szCsvResultFileName);
+
+    // save counter values (if used)
+    nReturnCode = SaveCounterValues();
+
+    // close error file (if open)
+    if (pErrorFile)
+    {
+      fclose(pErrorFile);
+      pErrorFile = NULL;
+    }
+
+    printf("CSV Data Columns: %d\nCSV Data Lines: %d\n\n", nCsvDataColumns, nRealCsvDataLines);
+    printf("Number of errors detected: %d\n\n", nErrors);
+
+    xmlFreeDoc(pXmlDoc); // free the xml document
+    xmlCleanupParser();  // free the global variables that may have been allocated by the parser
+
+    return nReturnCode;
   }
+  // end of function "ConvertXmlToCsv"
 
-  // write csv result file
-  nReturnCode = WriteCsvFile(szCsvResultFileName);
+  //--------------------------------------------------------------------------------------------------------
 
-  // save counter values (if used)
-  nReturnCode = SaveCounterValues();
+  int MyMoveFile(cpchar szSourceFileName, cpchar szDestinationFileName)
+  {
+    int nReturnCode;
 
-  // close error file (if open)
-  if (pErrorFile) {
-    fclose(pErrorFile);
-    pErrorFile = NULL;
-  }
+    nReturnCode = rename(szSourceFileName, szDestinationFileName);
 
-  printf("CSV Data Columns: %d\nCSV Data Lines: %d\n\n", nCsvDataColumns, nRealCsvDataLines);
-  printf("Number of errors detected: %d\n\n", nErrors);
-
-  xmlFreeDoc(pXmlDoc);  // free the xml document
-  xmlCleanupParser();  // free the global variables that may have been allocated by the parser
-
-  return nReturnCode;
-}
-// end of function "ConvertXmlToCsv"
-
-//--------------------------------------------------------------------------------------------------------
-
-int MyMoveFile(cpchar szSourceFileName, cpchar szDestinationFileName)
-{
-  int nReturnCode;
-
-	nReturnCode = rename(szSourceFileName, szDestinationFileName);
-
-	/*
+    /*
 	if (nReturnCode == EXDEV) {
 		// maybe we have to copy the file and remove the original file then
 	}
 	*/
 
-	return nReturnCode;
-}
+    return nReturnCode;
+  }
 
-//--------------------------------------------------------------------------------------------------------
-
-int main(int argc, char **argv)
-{
-	int i, nReturnCode, nFiles = 0;
-  char szConversion[8] = "";  //"csv2xml";
-  char szInput[MAX_FILE_NAME_SIZE] = "";
-  char szInputFileName[MAX_FILE_NAME_SIZE] = "";
-  char szInputPath[MAX_FILE_NAME_SIZE] = "";
-  char szLogFileName[MAX_FILE_NAME_SIZE] = "";  //"log.csv";
-  char szMappingFileName[MAX_FILE_NAME_SIZE] = "";  //"mapping.csv";
-  char szTemplateFileName[MAX_FILE_NAME_SIZE] = "";  //"template.csv";
-  char szOutput[MAX_FILE_NAME_SIZE] = "";
-  char szOutputFileName[MAX_FILE_NAME_SIZE] = "";
-  char szOutputPath[MAX_FILE_NAME_SIZE] = "";
-  char szError[MAX_FILE_NAME_SIZE] = "";  //"errors.csv";
-  char szProcessed[MAX_FILE_NAME_SIZE] = "";
-  char szProcessedFileName[MAX_FILE_NAME_SIZE] = "";
-  //char szErrorFileName[MAX_FILE_NAME_SIZE] = "";
-  cpchar pcParameter = NULL;
-  cpchar pcContent = NULL;
-  pchar pStarPos = NULL;
-  bool bMissingParameter = false;
-  //char ch;
-
-  puts("");
-  puts("FundsXML-CSV-Converter Version 1.03 from 27.07.2019");
-  puts("Open source command line tool for the FundsXML community");
-  puts("Source code is available under the MIT open source licence");
-  puts("on GitHub: https://github.com/peterraf/csv-xml-converter and http://www.xml-tools.net");
-  puts("Written by Peter Raffelsberger (peter@raffelsberger.net)");
-  puts("");
-
-  // Parameters:
-  //
-  // SINGLE FILE CONVERSIONS:
-  //
-  // NAV mappings:
-  // convert -conversion csv2xml -input input.csv -mapping mapping.csv -output result.xml -errors errors.csv
-  // convert -c c2x -i input.csv -m mapping.csv -o result.xml -e errors.csv
-  //
-  // convert -conversion xml2csv -input input.xml -mapping mapping.csv -template template.csv -output result.csv -errors errors.csv
-  // convert -c x2c -i nav-input.xml -m nav-mapping.csv -t nav-template.csv -o nav-output.csv -e nav-errors.csv
-  //
-  // HOLDINGS mappings:
-  // convert -c c2x -i holdings.csv -m holdings-mapping.csv -o holdings.xml -e holdings-errors.csv
-  // convert -c x2c -i holdings2.xml -m holdings-mapping.csv -t holdings-template.csv -o holdings2.csv -e holdings2-errors.csv
-  //
-  // ROBECO mappings:
-  // convert -c c2x -i robeco-holdings.csv -m robeco-holdings-mapping.csv -o robeco-holdings.xml -e robeco-holdings-errors.csv
-  //
-  // OPENFUNDS mappings:
-  // convert -c c2x -i openfunds\openfunds-input.csv -m openfunds\openfunds-mapping.csv -o openfunds\openfunds-output.xml -e openfunds\openfunds-csv-errors.csv
-  // convert -c x2c -i openfunds\openfunds-input.xml -m openfunds\openfunds-mapping.csv -t openfunds\openfunds-template.csv -o openfunds\openfunds-output.csv -e openfunds\openfunds-xml-errors.csv
-  //
-  // EMT mappings:
-  // convert -c c2x -i emt-input.csv -m emt-mapping.csv -o emt-output.xml -e emt-errors.csv
-  // convert -c x2c -i emt-input.xml -m emt-mapping.csv -t emt-template.csv -o emt-output.csv -e emt-errors.csv
-  //
-  // EMT mappings (openfunds version):
-  // convert -c c2x -i openfunds-emt-input.csv -m openfunds-emt-mapping.csv -o openfunds-emt-output.xml -e openfunds-emt-csv-errors.csv
-  // convert -c x2c -i openfunds-emt-input.xml -m openfunds-emt-mapping.csv -t openfunds-emt-template.csv -o openfunds-emt-output.csv -e openfunds-emt-xml-errors.csv
-  //
-  // TPT mappings:
-  // convert -c c2x -i tpt-input.csv -m tpt-mapping.csv -o tpt-output.xml -e tpt-errors.csv
-  // convert -c x2c -i tpt-input.xml -m tpt-mapping.csv -t tpt-template.csv -o tpt-output.csv -e tpt-errors2.csv
-  //
-  // TPT to HOLDINGS mappings:
-  // convert -c c2x -i tpt-holdings-input.csv -m tpt-holdings-mapping.csv -o tpt-holdings-output.xml -e tpt-holdings-errors.csv
-  // convert -c x2c -i tpt-holdings-input.xml -m tpt-holdings-mapping.csv -t tpt-holdings-template.csv -o tpt-holdings-output.csv -e tpt-holdings-errors2.csv
-  //
-  // BATCH CONVERSIONS:
-  //
-  // convert -conversion csv2xml -input c:\csv-xml-converter\inputfiles\*.csv -mapping mapping.csv -output c:\csv-xml-converter\outputfiles -errors error -log log.csv -processed processed -counter counter
-  // convert -c c2x -i input\*.csv -m holdings-mapping.csv -o output\*.xml -e error -l log.csv -p processed -r counter
-  //
-  // convert -conversion xml2csv -iinput input\*.xml -mapping holdings-mapping.csv -template holdings-template.csv -ooutput output\*.csv -error error -log log.csv -processed processed -counter counter
-  // convert -c x2c -i input\*.xml -m holdings-mapping.csv -t holdings-template.csv -o output\*.csv -e error -l log.csv -p processed -r counter
-  //
-
-  // parse command for parameters
-  for (i = 1; i < argc; i++)
+  //--------------------------------------------------------------------------------------------------------
+  int main(int argc, char **argv)
   {
-    pcParameter = argv[i];
-    if (*pcParameter++ == '-' && i < argc - 1)
+
+    int i, nReturnCode, nFiles = 0;
+    char szConversion[8] = ""; //"csv2xml";
+    char szInput[MAX_FILE_NAME_SIZE] = "";
+    char szInputFileName[MAX_FILE_NAME_SIZE] = "";
+    char szInputPath[MAX_FILE_NAME_SIZE] = "";
+    char szLogFileName[MAX_FILE_NAME_SIZE] = "";      //"log.csv";
+    char szMappingFileName[MAX_FILE_NAME_SIZE] = "";  //"mapping.csv";
+    char szTemplateFileName[MAX_FILE_NAME_SIZE] = ""; //"template.csv";
+    char szOutput[MAX_FILE_NAME_SIZE] = "";
+    char szOutputFileName[MAX_FILE_NAME_SIZE] = "";
+    char szOutputPath[MAX_FILE_NAME_SIZE] = "";
+    char szError[MAX_FILE_NAME_SIZE] = ""; //"errors.csv";
+    char szProcessed[MAX_FILE_NAME_SIZE] = "";
+    char szProcessedFileName[MAX_FILE_NAME_SIZE] = "";
+    //char szErrorFileName[MAX_FILE_NAME_SIZE] = "";
+    cpchar pcParameter = NULL;
+    cpchar pcContent = NULL;
+    pchar pStarPos = NULL;
+    bool bMissingParameter = false;
+    //char ch;
+
+    puts("");
+    puts("FundsXML-CSV-Converter Version 1.03 from 27.07.2019");
+    puts("Open source command line tool for the FundsXML community");
+    puts("Source code is available under the MIT open source licence");
+    puts("on GitHub: https://github.com/peterraf/csv-xml-converter and http://www.xml-tools.net");
+    puts("Written by Peter Raffelsberger (peter@raffelsberger.net)");
+    puts("");
+
+    // Parameters:
+    //
+    // SINGLE FILE CONVERSIONS:
+    //
+    // NAV mappings:
+    // convert -conversion csv2xml -input input.csv -mapping mapping.csv -output result.xml -errors errors.csv
+    // convert -c c2x -i input.csv -m mapping.csv -o result.xml -e errors.csv
+    //
+    // convert -conversion xml2csv -input input.xml -mapping mapping.csv -template template.csv -output result.csv -errors errors.csv
+    // convert -c x2c -i nav-input.xml -m nav-mapping.csv -t nav-template.csv -o nav-output.csv -e nav-errors.csv
+    //
+    // HOLDINGS mappings:
+    // convert -c c2x -i holdings.csv -m holdings-mapping.csv -o holdings.xml -e holdings-errors.csv
+    // convert -c x2c -i holdings2.xml -m holdings-mapping.csv -t holdings-template.csv -o holdings2.csv -e holdings2-errors.csv
+    //
+    // ROBECO mappings:
+    // convert -c c2x -i robeco-holdings.csv -m robeco-holdings-mapping.csv -o robeco-holdings.xml -e robeco-holdings-errors.csv
+    //
+    // OPENFUNDS mappings:
+    // convert -c c2x -i openfunds\openfunds-input.csv -m openfunds\openfunds-mapping.csv -o openfunds\openfunds-output.xml -e openfunds\openfunds-csv-errors.csv
+    // convert -c x2c -i openfunds\openfunds-input.xml -m openfunds\openfunds-mapping.csv -t openfunds\openfunds-template.csv -o openfunds\openfunds-output.csv -e openfunds\openfunds-xml-errors.csv
+    //
+    // EMT mappings:
+    // convert -c c2x -i emt-input.csv -m emt-mapping.csv -o emt-output.xml -e emt-errors.csv
+    // convert -c x2c -i emt-input.xml -m emt-mapping.csv -t emt-template.csv -o emt-output.csv -e emt-errors.csv
+    //
+    // EMT mappings (openfunds version):
+    // convert -c c2x -i openfunds-emt-input.csv -m openfunds-emt-mapping.csv -o openfunds-emt-output.xml -e openfunds-emt-csv-errors.csv
+    // convert -c x2c -i openfunds-emt-input.xml -m openfunds-emt-mapping.csv -t openfunds-emt-template.csv -o openfunds-emt-output.csv -e openfunds-emt-xml-errors.csv
+    //
+    // TPT mappings:
+    // convert -c c2x -i tpt-input.csv -m tpt-mapping.csv -o tpt-output.xml -e tpt-errors.csv
+    // convert -c x2c -i tpt-input.xml -m tpt-mapping.csv -t tpt-template.csv -o tpt-output.csv -e tpt-errors2.csv
+    //
+    // TPT to HOLDINGS mappings:
+    // convert -c c2x -i tpt-holdings-input.csv -m tpt-holdings-mapping.csv -o tpt-holdings-output.xml -e tpt-holdings-errors.csv
+    // convert -c x2c -i tpt-holdings-input.xml -m tpt-holdings-mapping.csv -t tpt-holdings-template.csv -o tpt-holdings-output.csv -e tpt-holdings-errors2.csv
+    //
+    // BATCH CONVERSIONS:
+    //
+    // convert -conversion csv2xml -input c:\csv-xml-converter\inputfiles\*.csv -mapping mapping.csv -output c:\csv-xml-converter\outputfiles -errors error -log log.csv -processed processed -counter counter
+    // convert -c c2x -i input\*.csv -m holdings-mapping.csv -o output\*.xml -e error -l log.csv -p processed -r counter
+    //
+    // convert -conversion xml2csv -iinput input\*.xml -mapping holdings-mapping.csv -template holdings-template.csv -ooutput output\*.csv -error error -log log.csv -processed processed -counter counter
+    // convert -c x2c -i input\*.xml -m holdings-mapping.csv -t holdings-template.csv -o output\*.csv -e error -l log.csv -p processed -r counter
+    //
+
+    // parse command for parameters
+    for (i = 1; i < argc; i++)
     {
-      pcContent = argv[++i];
-      if (strlen(pcContent) > MAX_FILE_NAME_LEN) {
-        printf("Content of command line parameter '%s' is too long (maximum length is %d characters)\n", pcParameter, MAX_FILE_NAME_LEN);
-        goto ProcEnd;
-      }
-      else {
-        // conversion direction
-        if (stricmp(pcParameter, "CONVERSION") == 0 || stricmp(pcParameter, "C") == 0) {
-          if (stricmp(pcContent, "csv2xml") == 0 || stricmp(pcContent, "c2x") == 0)
-            strcpy(szConversion, "csv2xml");
-          if (stricmp(pcContent, "xml2csv") == 0 || stricmp(pcContent, "x2c") == 0)
-            strcpy(szConversion, "xml2csv");
+      pcParameter = argv[i];
+      if (*pcParameter++ == '-' && i < argc - 1)
+      {
+        pcContent = argv[++i];
+        if (strlen(pcContent) > MAX_FILE_NAME_LEN)
+        {
+          printf("Content of command line parameter '%s' is too long (maximum length is %d characters)\n", pcParameter, MAX_FILE_NAME_LEN);
+          goto ProcEnd;
         }
+        else
+        {
+          // conversion direction
+          if (stricmp(pcParameter, "CONVERSION") == 0 || stricmp(pcParameter, "C") == 0)
+          {
+            if (stricmp(pcContent, "csv2xml") == 0 || stricmp(pcContent, "c2x") == 0)
+              strcpy(szConversion, "csv2xml");
+            if (stricmp(pcContent, "xml2csv") == 0 || stricmp(pcContent, "x2c") == 0)
+              strcpy(szConversion, "xml2csv");
+          }
 
-        // input file name or directory
-        if (stricmp(pcParameter, "INPUT") == 0 || stricmp(pcParameter, "I") == 0)
-          strcpy(szInput, pcContent);
+          // input file name or directory
+          if (stricmp(pcParameter, "INPUT") == 0 || stricmp(pcParameter, "I") == 0)
+            strcpy(szInput, pcContent);
 
-        // log file name
-        if (stricmp(pcParameter, "LOG") == 0 || stricmp(pcParameter, "L") == 0)
-          strcpy(szLogFileName, pcContent);
+          // log file name
+          if (stricmp(pcParameter, "LOG") == 0 || stricmp(pcParameter, "L") == 0)
+            strcpy(szLogFileName, pcContent);
 
-        // mapping file name
-        if (stricmp(pcParameter, "MAPPING") == 0 || stricmp(pcParameter, "M") == 0)
-          strcpy(szMappingFileName, pcContent);
+          // mapping file name
+          if (stricmp(pcParameter, "MAPPING") == 0 || stricmp(pcParameter, "M") == 0)
+            strcpy(szMappingFileName, pcContent);
 
-        // template file name
-        if (stricmp(pcParameter, "TEMPLATE") == 0 || stricmp(pcParameter, "T") == 0)
-          strcpy(szTemplateFileName, pcContent);
+          // template file name
+          if (stricmp(pcParameter, "TEMPLATE") == 0 || stricmp(pcParameter, "T") == 0)
+            strcpy(szTemplateFileName, pcContent);
 
-        // output file name or directory
-        if (stricmp(pcParameter, "OUTPUT") == 0 || stricmp(pcParameter, "O") == 0)
-          strcpy(szOutput, pcContent);
+          // output file name or directory
+          if (stricmp(pcParameter, "OUTPUT") == 0 || stricmp(pcParameter, "O") == 0)
+            strcpy(szOutput, pcContent);
 
-        // log file name or directory
-        if (stricmp(pcParameter, "ERRORS") == 0 || stricmp(pcParameter, "E") == 0)
-          strcpy(szError, pcContent);
+          // log file name or directory
+          if (stricmp(pcParameter, "ERRORS") == 0 || stricmp(pcParameter, "E") == 0)
+            strcpy(szError, pcContent);
 
-        // directory for processed files
-        if ((stricmp(pcParameter, "PROCESSED") == 0 || stricmp(pcParameter, "P") == 0) && strlen(pcContent) < MAX_PATH_LEN)
-          strcpy(szProcessed, pcContent);
+          // directory for processed files
+          if ((stricmp(pcParameter, "PROCESSED") == 0 || stricmp(pcParameter, "P") == 0) && strlen(pcContent) < MAX_PATH_LEN)
+            strcpy(szProcessed, pcContent);
 
-        // directory for processed files
-        if ((stricmp(pcParameter, "COUNTER") == 0 || stricmp(pcParameter, "R") == 0) && strlen(pcContent) < MAX_PATH_LEN)
-          sprintf(szCounterPath, "%s%c", pcContent, cPathSeparator);
+          // directory for processed files
+          if ((stricmp(pcParameter, "COUNTER") == 0 || stricmp(pcParameter, "R") == 0) && strlen(pcContent) < MAX_PATH_LEN)
+            sprintf(szCounterPath, "%s%c", pcContent, cPathSeparator);
+        }
       }
     }
-  }
 
-  if (!*szConversion) {
-    puts("Missing or invalid parameter 'conversion' for conversion direction (valid options: 'csv2xml','c2x','xml2csv','x2c')");
-    bMissingParameter = true;
-  }
+    if (!*szConversion)
+    {
+      puts("Missing or invalid parameter 'conversion' for conversion direction (valid options: 'csv2xml','c2x','xml2csv','x2c')");
+      bMissingParameter = true;
+    }
 
-  if (!*szInput) {
-    puts("Missing parameter 'input' for input file(s)");
-    bMissingParameter = true;
-  }
+    if (!*szInput)
+    {
+      puts("Missing parameter 'input' for input file(s)");
+      bMissingParameter = true;
+    }
 
-  if (!*szMappingFileName) {
-    puts("Missing parameter 'mapping' for mapping definition");
-    bMissingParameter = true;
-  }
+    if (!*szMappingFileName)
+    {
+      puts("Missing parameter 'mapping' for mapping definition");
+      bMissingParameter = true;
+    }
 
-  if (!*szOutput) {
-    puts("Missing parameter 'output' for output file(s)");
-    bMissingParameter = true;
-  }
+    if (!*szOutput)
+    {
+      puts("Missing parameter 'output' for output file(s)");
+      bMissingParameter = true;
+    }
 
-  if (stricmp(szConversion, "xml2csv") == 0 && !*szTemplateFileName) {
-    puts("Missing parameter 'template' for template csv file");
-    bMissingParameter = true;
-  }
+    if (stricmp(szConversion, "xml2csv") == 0 && !*szTemplateFileName)
+    {
+      puts("Missing parameter 'template' for template csv file");
+      bMissingParameter = true;
+    }
 
-  if (bMissingParameter)
-    goto ProcEnd;
-
-  if (*szLogFileName) {
-    // check existance of log file (and write header if not existing)
-    nReturnCode = CheckLogFileHeader(szLogFileName);
-    if (nReturnCode != 0)
+    if (bMissingParameter)
       goto ProcEnd;
 
-    // log start of processing
-    AddLog(szLogFileName, "START", szConversion, "", 0, 0, szInput, szMappingFileName, szTemplateFileName, szOutput, szProcessed, "", "");
-  }
+    if (*szLogFileName)
+    {
+      // check existance of log file (and write header if not existing)
+      nReturnCode = CheckLogFileHeader(szLogFileName);
+      if (nReturnCode != 0)
+        goto ProcEnd;
 
-  // name of mapping error file
-  strcpy(szMappingErrorFileName, szMappingFileName);
-  ReplaceExtension(szMappingErrorFileName, "err");
-
-  // read mapping file
-  printf("Mapping definition: %s\n", szMappingFileName);
-  nReturnCode = ReadFieldMappings(szMappingFileName);
-  printf("Field mappings loaded: %d\n\n", nFieldMappings);
-
-  if (nReturnCode <= 0) {
-    AddLog(szLogFileName, "ERROR", szConversion, szLastError, nErrors, nCsvDataLines, szInput, szMappingFileName, szTemplateFileName, szOutput, szProcessed, szUniqueDocumentID, szError);
-    goto ProcEnd;
-  }
-
-  // single or multiple file conversions ?
-  pStarPos = strchr(szInput, '*');
-
-  if (pStarPos) {
-    // multiple file conversion
-    ExtractPath(szInputPath, szInput);
-    ExtractPath(szOutputPath, szOutput);
-
-    // Windows version:
-
-    // Source of sample code (for different operating systems): https://faq.cprogramming.com/cgi-bin/smartfaq.cgi?answer=1046380353&id=1044780608
-    HANDLE hFileSearch;
-    //WIN32_FIND_DATA info;
-    WIN32_FIND_DATAA fileSearchInfo;
-
-    printf("\nSearching for input files: %s\n", szInput);
-    // WINBASEAPI __out HANDLE WINAPI FindFirstFileA (__in LPCSTR lpFileName, __out LPWIN32_FIND_DATAA lpFindFileData);
-    hFileSearch = FindFirstFileA(szInput, &fileSearchInfo);
-
-    if (hFileSearch != INVALID_HANDLE_VALUE) {
-      do {
-        if ((fileSearchInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-          nFiles++;
-          printf("Input file %d: %s\n", nFiles, fileSearchInfo.cFileName);
-
-          sprintf(szInputFileName, "%s%s", szInputPath, fileSearchInfo.cFileName);
-          sprintf(szOutputFileName, "%s%s", szOutputPath, fileSearchInfo.cFileName);
-					sprintf(szProcessedFileName, "%s%c%s", szProcessed, cPathSeparator, fileSearchInfo.cFileName);
-					sprintf(szErrorFileName, "%s%c%s", szError, cPathSeparator, fileSearchInfo.cFileName);
-
-          if (stricmp(szConversion, "csv2xml") == 0) {
-            // convert from csv to xml format
-            convDir = CSV2XML;
-            ReplaceExtension(szOutputFileName, "xml");
-            FindUniqueFileName(szOutputFileName);
-						FindUniqueFileName(szProcessedFileName);
-						ReplaceExtension(szErrorFileName, "csv");  // input file might have different extension like .txt
-						FindUniqueFileName(szErrorFileName);
-
-            // convert csv file to xml format
-            nReturnCode = ConvertCsvToXml(szInputFileName, szOutputFileName);
-						MyMoveFile(szInputFileName, szProcessedFileName);
-
-            // add log entry to application log
-            AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInputFileName, szMappingFileName, "", szOutputFileName, szProcessedFileName, szUniqueDocumentID, szErrorFileName);
-          }
-
-          if (stricmp(szConversion, "xml2csv") == 0) {
-            // convert from csv to xml format
-            convDir = XML2CSV;
-            ReplaceExtension(szOutputFileName, "csv");
-            FindUniqueFileName(szOutputFileName);
-						FindUniqueFileName(szProcessedFileName);
-						ReplaceExtension(szErrorFileName, "csv");
-            FindUniqueFileName(szErrorFileName);
-
-            // convert xml file to csv format
-            nReturnCode = ConvertXmlToCsv(szInputFileName, szTemplateFileName, szOutputFileName);
-						MyMoveFile(szInputFileName, szProcessedFileName);
-
-            // add log entry to application log
-            AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInputFileName, szMappingFileName, szTemplateFileName, szOutputFileName, szProcessedFileName, szUniqueDocumentID, szErrorFileName);
-          }
-
-        }
-      } while (FindNextFileA(hFileSearch, &fileSearchInfo));
-
-      if (GetLastError() != ERROR_NO_MORE_FILES)
-        printf("FindFile error: %u\n", GetLastError());
-
-      FindClose(hFileSearch);
+      // log start of processing
+      AddLog(szLogFileName, "START", szConversion, "", 0, 0, szInput, szMappingFileName, szTemplateFileName, szOutput, szProcessed, "", "");
     }
 
-		// log end of processing
-		//AddLog(szLogFileName, "END", szConversion, "", 0, 0, szInput, szMappingFileName, szTemplateFileName, szOutput, szProcessed, "", "");
+    // name of mapping error file
+    strcpy(szMappingErrorFileName, szMappingFileName);
+    ReplaceExtension(szMappingErrorFileName, "err");
 
-		printf("Input files processed: %d\n", nFiles);
+    // read mapping file
+    printf("Mapping definition: %s\n", szMappingFileName);
+    nReturnCode = ReadFieldMappings(szMappingFileName);
+    printf("Field mappings loaded: %d\n\n", nFieldMappings);
 
-    /*
+    if (nReturnCode <= 0)
+    {
+      AddLog(szLogFileName, "ERROR", szConversion, szLastError, nErrors, nCsvDataLines, szInput, szMappingFileName, szTemplateFileName, szOutput, szProcessed, szUniqueDocumentID, szError);
+      goto ProcEnd;
+    }
+
+    // single or multiple file conversions ?
+    pStarPos = strchr(szInput, '*');
+
+    if (pStarPos)
+    {
+      // multiple file conversion
+      ExtractPath(szInputPath, szInput);
+      ExtractPath(szOutputPath, szOutput);
+
+      // Windows version:
+
+      // Source of sample code (for different operating systems): https://faq.cprogramming.com/cgi-bin/smartfaq.cgi?answer=1046380353&id=1044780608
+      HANDLE hFileSearch;
+
+      // KK: https://stackoverflow.com/questions/46704917/win32-find-data-equivalent-in-linux-c
+      WIN32_FIND_DATAA fileSearchInfo;
+
+      printf("\nSearching for input files: %s\n", szInput);
+      // WINBASEAPI __out HANDLE WINAPI FindFirstFileA (__in LPCSTR lpFileName, __out LPWIN32_FIND_DATAA lpFindFileData);
+      hFileSearch = FindFirstFileA(szInput, &fileSearchInfo);
+
+      if (hFileSearch != INVALID_HANDLE_VALUE)
+      {
+        do
+        {
+          if ((fileSearchInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
+          {
+            nFiles++;
+            printf("Input file %d: %s\n", nFiles, fileSearchInfo.cFileName);
+
+            sprintf(szInputFileName, "%s%s", szInputPath, fileSearchInfo.cFileName);
+            sprintf(szOutputFileName, "%s%s", szOutputPath, fileSearchInfo.cFileName);
+            sprintf(szProcessedFileName, "%s%c%s", szProcessed, cPathSeparator, fileSearchInfo.cFileName);
+            sprintf(szErrorFileName, "%s%c%s", szError, cPathSeparator, fileSearchInfo.cFileName);
+
+            if (stricmp(szConversion, "csv2xml") == 0)
+            {
+              // convert from csv to xml format
+              convDir = CSV2XML;
+              ReplaceExtension(szOutputFileName, "xml");
+              FindUniqueFileName(szOutputFileName);
+              FindUniqueFileName(szProcessedFileName);
+              ReplaceExtension(szErrorFileName, "csv"); // input file might have different extension like .txt
+              FindUniqueFileName(szErrorFileName);
+
+              // convert csv file to xml format
+              nReturnCode = ConvertCsvToXml(szInputFileName, szOutputFileName);
+              MyMoveFile(szInputFileName, szProcessedFileName);
+
+              // add log entry to application log
+              AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInputFileName, szMappingFileName, "", szOutputFileName, szProcessedFileName, szUniqueDocumentID, szErrorFileName);
+            }
+
+            if (stricmp(szConversion, "xml2csv") == 0)
+            {
+              // convert from csv to xml format
+              convDir = XML2CSV;
+              ReplaceExtension(szOutputFileName, "csv");
+              FindUniqueFileName(szOutputFileName);
+              FindUniqueFileName(szProcessedFileName);
+              ReplaceExtension(szErrorFileName, "csv");
+              FindUniqueFileName(szErrorFileName);
+
+              // convert xml file to csv format
+              nReturnCode = ConvertXmlToCsv(szInputFileName, szTemplateFileName, szOutputFileName);
+              MyMoveFile(szInputFileName, szProcessedFileName);
+
+              // add log entry to application log
+              AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInputFileName, szMappingFileName, szTemplateFileName, szOutputFileName, szProcessedFileName, szUniqueDocumentID, szErrorFileName);
+            }
+          }
+        } while (FindNextFileA(hFileSearch, &fileSearchInfo));
+
+        if (GetLastError() != ERROR_NO_MORE_FILES)
+          printf("FindFile error: %u\n", GetLastError());
+
+        FindClose(hFileSearch);
+      }
+
+      // log end of processing
+      //AddLog(szLogFileName, "END", szConversion, "", 0, 0, szInput, szMappingFileName, szTemplateFileName, szOutput, szProcessed, "", "");
+
+      printf("Input files processed: %d\n", nFiles);
+
+      /*
     // Linux Version:
     //
     DIR *d;
@@ -4284,61 +4674,62 @@ int main(int argc, char **argv)
       closedir(d);
     }
     */
+    }
+    else
+    {
+      // single file conversion
 
+      // conversion from csv to xml format ?
+      if (stricmp(szConversion, "csv2xml") == 0)
+      {
+        convDir = CSV2XML;
 
-  }
-  else {
-    // single file conversion
+        // set default input file name
+        if (!*szInput)
+          strcpy(szInput, "input.csv");
 
-    // conversion from csv to xml format ?
-    if (stricmp(szConversion, "csv2xml") == 0) {
-      convDir = CSV2XML;
+        // set default output file name
+        if (!*szOutput)
+          strcpy(szOutput, "output.xml");
 
-      // set default input file name
-      if (!*szInput)
-        strcpy(szInput, "input.csv");
+        // convert from csv to xml format
+        strcpy(szErrorFileName, szError);
+        nReturnCode = ConvertCsvToXml(szInput, szOutput);
 
-      // set default output file name
-      if (!*szOutput)
-        strcpy(szOutput, "output.xml");
+        // add log entry to application log
+        AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInput, szMappingFileName, "", szOutput, "", szUniqueDocumentID, szErrorFileName);
+      }
 
-      // convert from csv to xml format
-      strcpy(szErrorFileName, szError);
-      nReturnCode = ConvertCsvToXml(szInput, szOutput);
+      // conversion from xml to csv format ?
+      if (stricmp(szConversion, "xml2csv") == 0)
+      {
+        convDir = XML2CSV;
 
-      // add log entry to application log
-      AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInput, szMappingFileName, "", szOutput, "", szUniqueDocumentID, szErrorFileName);
+        // set default input file name
+        if (!*szInput)
+          strcpy(szInput, "input.xml");
+
+        // set default output file name
+        if (!*szOutput)
+          strcpy(szOutput, "output.csv");
+
+        // convert from csv to xml format
+        strcpy(szErrorFileName, szError);
+        nReturnCode = ConvertXmlToCsv(szInput, szTemplateFileName, szOutput);
+
+        // add log entry to application log
+        AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInput, szMappingFileName, "", szOutput, "", szUniqueDocumentID, szErrorFileName);
+      }
     }
 
-    // conversion from xml to csv format ?
-    if (stricmp(szConversion, "xml2csv") == 0) {
-      convDir = XML2CSV;
-
-      // set default input file name
-      if (!*szInput)
-        strcpy(szInput, "input.xml");
-
-      // set default output file name
-      if (!*szOutput)
-        strcpy(szOutput, "output.csv");
-
-      // convert from csv to xml format
-      strcpy(szErrorFileName, szError);
-      nReturnCode = ConvertXmlToCsv(szInput, szTemplateFileName, szOutput);
-
-      // add log entry to application log
-      AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInput, szMappingFileName, "", szOutput, "", szUniqueDocumentID, szErrorFileName);
-    }
-  }
-
-ProcEnd:
-  /*  
+  ProcEnd:
+    /*  
   // used for easier testing
   puts("\nPress <Enter> to continue/close window\n");
   getchar();
   */
-	return 0;
-}
+    return 0;
+  }
 
 #ifdef __cplusplus
 }

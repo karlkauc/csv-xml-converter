@@ -111,7 +111,6 @@ extern "C"
 #define MAX_ATTR_VALUE_SIZE 256
 #define MAX_ATTR_VALUE_LEN (MAX_ATTR_VALUE_SIZE - 1)
 
-#define stricmp strcasecmp
 
   // allow usage of original stdio functions like strcpy, memcpy, ...
   //#pragma warning(suppress : 4996)
@@ -2708,7 +2707,7 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
     if (nPos > 0 && pszSearchColumnName[nPos] == '*')
       bMatch = (strnicmp(pszColumnName, pszSearchColumnName, nPos) == 0);
     else
-      bMatch = (stricmp(pszColumnName, pszSearchColumnName) == 0);
+      bMatch = (strcasecmp(pszColumnName, pszSearchColumnName) == 0);
 
     return bMatch;
   }
@@ -3054,7 +3053,7 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
 
     // loop over all mapping fields
     for (nMapIndex = 0, pFieldMapping = aFieldMapping; nMapIndex < nFieldMappings; nMapIndex++, pFieldMapping++)
-      if (pFieldMapping->csv.cOperation == 'M' && (stricmp(szColumnName, pFieldMapping->csv.szContent) == 0 || stricmp(szColumnName, pFieldMapping->csv.szContent2) == 0))
+      if (pFieldMapping->csv.cOperation == 'M' && (strcasecmp(szColumnName, pFieldMapping->csv.szContent) == 0 || strcasecmp(szColumnName, pFieldMapping->csv.szContent2) == 0))
         return pFieldMapping->nCsvIndex;
 
     return -1;
@@ -3070,7 +3069,7 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
     int len, nLeftColumnIndex, nRightColumnIndex;
     bool bMatch = false;
 
-    if (stricmp(pFieldMapping->csv.szCondition, "contentisvalid()") == 0)
+    if (strcasecmp(pFieldMapping->csv.szCondition, "contentisvalid()") == 0)
     {
       // get content of csv field
       pszFieldValue = GetCsvFieldValue(nCsvDataLine, pFieldMapping->nCsvIndex);
@@ -3158,6 +3157,12 @@ strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
 #define MAX_COUNTERS 20
 #define MAX_COUNTER_LENGTH 50
 
+
+#ifdef __unix
+#define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),(mode)))==NULL
+#endif
+
+
   typedef struct
   {
     char szCounterName[MAX_COUNTER_NAME_SIZE];
@@ -3204,7 +3209,7 @@ SECOND,20190104125900,NUM,5,0,1
     }
 
     for (i = 0; i < nCounters && nCounterIndex < 0; i++)
-      if (stricmp(pszCounterName, aCounter[i].szCounterName) == 0)
+      if (strcasecmp(pszCounterName, aCounter[i].szCounterName) == 0)
       {
         nCounterIndex = i;
         pCounterDef = aCounter + i;
@@ -3495,7 +3500,7 @@ SECOND,20190104125900,NUM,5,0,1
     mystrncpy(pResult, szValue, nMaxSize);
 
     /*
-  if (stricmp(pFieldMapping->csv.szContent, "NOW") == 0) {
+  if (strcasecmp(pFieldMapping->csv.szContent, "NOW") == 0) {
     time_t now = time(NULL);
     struct tm* tm_info;
     tm_info = localtime(&now);
@@ -4477,44 +4482,44 @@ SECOND,20190104125900,NUM,5,0,1
         else
         {
           // conversion direction
-          if (stricmp(pcParameter, "CONVERSION") == 0 || stricmp(pcParameter, "C") == 0)
+          if (strcasecmp(pcParameter, "CONVERSION") == 0 || strcasecmp(pcParameter, "C") == 0)
           {
-            if (stricmp(pcContent, "csv2xml") == 0 || stricmp(pcContent, "c2x") == 0)
+            if (strcasecmp(pcContent, "csv2xml") == 0 || strcasecmp(pcContent, "c2x") == 0)
               strcpy(szConversion, "csv2xml");
-            if (stricmp(pcContent, "xml2csv") == 0 || stricmp(pcContent, "x2c") == 0)
+            if (strcasecmp(pcContent, "xml2csv") == 0 || strcasecmp(pcContent, "x2c") == 0)
               strcpy(szConversion, "xml2csv");
           }
 
           // input file name or directory
-          if (stricmp(pcParameter, "INPUT") == 0 || stricmp(pcParameter, "I") == 0)
+          if (strcasecmp(pcParameter, "INPUT") == 0 || strcasecmp(pcParameter, "I") == 0)
             strcpy(szInput, pcContent);
 
           // log file name
-          if (stricmp(pcParameter, "LOG") == 0 || stricmp(pcParameter, "L") == 0)
+          if (strcasecmp(pcParameter, "LOG") == 0 || strcasecmp(pcParameter, "L") == 0)
             strcpy(szLogFileName, pcContent);
 
           // mapping file name
-          if (stricmp(pcParameter, "MAPPING") == 0 || stricmp(pcParameter, "M") == 0)
+          if (strcasecmp(pcParameter, "MAPPING") == 0 || strcasecmp(pcParameter, "M") == 0)
             strcpy(szMappingFileName, pcContent);
 
           // template file name
-          if (stricmp(pcParameter, "TEMPLATE") == 0 || stricmp(pcParameter, "T") == 0)
+          if (strcasecmp(pcParameter, "TEMPLATE") == 0 || strcasecmp(pcParameter, "T") == 0)
             strcpy(szTemplateFileName, pcContent);
 
           // output file name or directory
-          if (stricmp(pcParameter, "OUTPUT") == 0 || stricmp(pcParameter, "O") == 0)
+          if (strcasecmp(pcParameter, "OUTPUT") == 0 || strcasecmp(pcParameter, "O") == 0)
             strcpy(szOutput, pcContent);
 
           // log file name or directory
-          if (stricmp(pcParameter, "ERRORS") == 0 || stricmp(pcParameter, "E") == 0)
+          if (strcasecmp(pcParameter, "ERRORS") == 0 || strcasecmp(pcParameter, "E") == 0)
             strcpy(szError, pcContent);
 
           // directory for processed files
-          if ((stricmp(pcParameter, "PROCESSED") == 0 || stricmp(pcParameter, "P") == 0) && strlen(pcContent) < MAX_PATH_LEN)
+          if ((strcasecmp(pcParameter, "PROCESSED") == 0 || strcasecmp(pcParameter, "P") == 0) && strlen(pcContent) < MAX_PATH_LEN)
             strcpy(szProcessed, pcContent);
 
           // directory for processed files
-          if ((stricmp(pcParameter, "COUNTER") == 0 || stricmp(pcParameter, "R") == 0) && strlen(pcContent) < MAX_PATH_LEN)
+          if ((strcasecmp(pcParameter, "COUNTER") == 0 || strcasecmp(pcParameter, "R") == 0) && strlen(pcContent) < MAX_PATH_LEN)
             sprintf(szCounterPath, "%s%c", pcContent, cPathSeparator);
         }
       }
@@ -4544,7 +4549,7 @@ SECOND,20190104125900,NUM,5,0,1
       bMissingParameter = true;
     }
 
-    if (stricmp(szConversion, "xml2csv") == 0 && !*szTemplateFileName)
+    if (strcasecmp(szConversion, "xml2csv") == 0 && !*szTemplateFileName)
     {
       puts("Missing parameter 'template' for template csv file");
       bMissingParameter = true;
@@ -4614,7 +4619,7 @@ SECOND,20190104125900,NUM,5,0,1
             sprintf(szProcessedFileName, "%s%c%s", szProcessed, cPathSeparator, fileSearchInfo.cFileName);
             sprintf(szErrorFileName, "%s%c%s", szError, cPathSeparator, fileSearchInfo.cFileName);
 
-            if (stricmp(szConversion, "csv2xml") == 0)
+            if (strcasecmp(szConversion, "csv2xml") == 0)
             {
               // convert from csv to xml format
               convDir = CSV2XML;
@@ -4632,7 +4637,7 @@ SECOND,20190104125900,NUM,5,0,1
               AddLog(szLogFileName, "FILE", szConversion, szLastError, nErrors, nRealCsvDataLines, szInputFileName, szMappingFileName, "", szOutputFileName, szProcessedFileName, szUniqueDocumentID, szErrorFileName);
             }
 
-            if (stricmp(szConversion, "xml2csv") == 0)
+            if (strcasecmp(szConversion, "xml2csv") == 0)
             {
               // convert from csv to xml format
               convDir = XML2CSV;
@@ -4682,7 +4687,7 @@ SECOND,20190104125900,NUM,5,0,1
       // single file conversion
 
       // conversion from csv to xml format ?
-      if (stricmp(szConversion, "csv2xml") == 0)
+      if (strcasecmp(szConversion, "csv2xml") == 0)
       {
         convDir = CSV2XML;
 
@@ -4703,7 +4708,7 @@ SECOND,20190104125900,NUM,5,0,1
       }
 
       // conversion from xml to csv format ?
-      if (stricmp(szConversion, "xml2csv") == 0)
+      if (strcasecmp(szConversion, "xml2csv") == 0)
       {
         convDir = XML2CSV;
 

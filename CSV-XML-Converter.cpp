@@ -111,6 +111,8 @@ extern "C"
 #define MAX_ATTR_VALUE_SIZE 256
 #define MAX_ATTR_VALUE_LEN (MAX_ATTR_VALUE_SIZE - 1)
 
+#define stricmp strcasecmp
+
   // allow usage of original stdio functions like strcpy, memcpy, ...
   //#pragma warning(suppress : 4996)
 

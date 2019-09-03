@@ -491,7 +491,7 @@ extern "C"
   {
     FILE *pFile = NULL;
 
-    int error_code = fopen_s(&pFile, szFileName, "r");
+    pFile = fopen(szFileName, "r");
 
     if (pFile)
     {
@@ -586,7 +586,7 @@ extern "C"
 
     if (*szFileName)
     {
-      error_code = fopen_s(&pFile, szFileName, "a");
+      pFile = fopen(szFileName, "a");
       if (pFile)
       {
         time_t now = time(NULL);
@@ -613,7 +613,7 @@ extern "C"
 
     if (!FileExists(szFileName))
     {
-      error_code = fopen_s(&pFile, szFileName, "w");
+      pFile = fopen(szFileName, "w");
       if (pFile)
       {
         fputs("TIMESTAMP;LOG_TYPE;CONVERSION;ERROR;CONTENT_ERRORS;CSV_DATA_RECORDS;INPUT_FILE_NAME;MAPPING_FILE_NAME;TEMPLATE_FILE_NAME;OUTPUT_FILE_NAME;PROCESSED_FILE_NAME;UNIQUE_DOCUMENT_ID;ERROR_FILE_NAME\n", pFile);
@@ -640,7 +640,7 @@ extern "C"
     if (!pMappingErrorFile)
     {
       // open file in write mode
-      error_code = fopen_s(&pMappingErrorFile, szMappingErrorFileName, "w");
+      pMappingErrorFile = fopen(szMappingErrorFileName, "w");
       if (!pMappingErrorFile)
       {
         printf("Cannot open file '%s' (error code %d)\n", szMappingErrorFileName, error_code);
@@ -674,7 +674,7 @@ extern "C"
     if (!pErrorFile)
     {
       // open file in write mode
-      error_code = fopen_s(&pErrorFile, szErrorFileName, "w");
+      pErrorFile = fopen(szErrorFileName, "w");
       if (!pErrorFile)
       {
         printf("Cannot open file '%s' (error code %d)\n", szErrorFileName, error_code);
@@ -708,7 +708,7 @@ extern "C"
     FILE *pFile = NULL;
     int error_code;
 
-    error_code = fopen_s(&pFile, pszFileName, "r");
+    pFile = fopen(pszFileName, "r");
     if (!pFile)
     {
       sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, error_code);
@@ -736,7 +736,7 @@ extern "C"
     FILE *pFile = NULL;
     int error_code;
 
-    error_code = fopen_s(&pFile, pszFileName, "w");
+    pFile = fopen(pszFileName, "w");
     if (!pFile)
     {
       sprintf(szLastError, "Cannot open file '%s' (error code %d)", pszFileName, error_code);
@@ -2422,7 +2422,7 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
     char szTemp[256];
 
     // open csv file for input in binary mode (cr/lf are not changed)
-    error_code = fopen_s(&pFile, szFileName, "rb");
+    pFile = fopen(szFileName, "rb");
     if (!pFile)
     {
       sprintf(szLastError, "Cannot open mapping file '%s' (error code %d)", szFileName, error_code);
@@ -2729,7 +2729,7 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
     nRealCsvDataLines = 0;
 
     // open csv file for input in binary mode (cr/lf are not changed)
-    error_code = fopen_s(&pFile, szFileName, "rb");
+    pFile = fopen(szFileName, "rb");
     if (!pFile)
     {
       sprintf(szLastError, "Cannot open input file '%s' (error code %d)", szFileName, error_code);
@@ -3153,12 +3153,6 @@ strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
 
 #define MAX_COUNTERS 20
 #define MAX_COUNTER_LENGTH 50
-
-
-#ifdef __unix
-#define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),(mode)))==NULL
-#endif
-
 
   typedef struct
   {
@@ -4014,7 +4008,7 @@ SECOND,20190104125900,NUM,5,0,1
     bool bMap, bMatch, bLoopData;
 
     // open file in write mode
-    error_code = fopen_s(&pFile, szFileName, "w");
+    pFile = fopen(szFileName, "w");
     if (!pFile)
     {
       printf("Cannot open file '%s' (error code %d)\n", szFileName, error_code);

@@ -33,9 +33,6 @@ SOFTWARE.
 #include <time.h>
 #include <ctype.h>
 
-// KK
-#include <filesystem>
-
 #include <stdlib.h>  // for Windows
 // #include <windows.h> // for Windows
 //#include <dirent.h>  // for Linux
@@ -494,7 +491,7 @@ extern "C"
   {
     FILE *pFile = NULL;
 
-    errno_t error_code = fopen_s(&pFile, szFileName, "r");
+    int error_code = fopen_s(&pFile, szFileName, "r");
 
     if (pFile)
     {
@@ -584,7 +581,7 @@ extern "C"
               cpchar szOutputFileName, cpchar szProcessedFileName, cpchar szUniqueDocumentID, cpchar szErrorFileName)
   {
     FILE *pFile = NULL;
-    errno_t error_code;
+    int error_code;
     char szNow[20];
 
     if (*szFileName)
@@ -612,7 +609,7 @@ extern "C"
   int CheckLogFileHeader(cpchar szFileName)
   {
     FILE *pFile = NULL;
-    errno_t error_code;
+    int error_code;
 
     if (!FileExists(szFileName))
     {
@@ -636,7 +633,7 @@ extern "C"
   int LogMappingError(int nMapIndex, cpchar szOperation, cpchar szColumnName, cpchar szError)
   {
     int nReturnCode = 0;
-    errno_t error_code;
+    int error_code;
 
     nMappingErrors++;
 
@@ -664,7 +661,7 @@ extern "C"
   int LogXmlError(int nLine, int nColumnIndex, cpchar szColumnName, cpchar szXPath, cpchar szValue, cpchar szError)
   {
     int nReturnCode = 0;
-    errno_t error_code;
+    int error_code;
 
     if (nColumnIndex >= 0 && nColumnIndex < nCsvDataColumns && abColumnError[nColumnIndex])
       return 0; // report only first error for each column
@@ -709,7 +706,7 @@ extern "C"
   {
     int nBytesRead = 0;
     FILE *pFile = NULL;
-    errno_t error_code;
+    int error_code;
 
     error_code = fopen_s(&pFile, pszFileName, "r");
     if (!pFile)
@@ -737,7 +734,7 @@ extern "C"
   {
     int nReturnCode = 0;
     FILE *pFile = NULL;
-    errno_t error_code;
+    int error_code;
 
     error_code = fopen_s(&pFile, pszFileName, "w");
     if (!pFile)
@@ -2421,7 +2418,7 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
     FieldMapping *pFieldMapping, *pFieldMapping2;
     pchar aField[MAX_MAPPING_COLUMNS];
     FILE *pFile = NULL;
-    errno_t error_code;
+    int error_code;
     char szTemp[256];
 
     // open csv file for input in binary mode (cr/lf are not changed)
@@ -2724,7 +2721,7 @@ MAP    Column Name    M NUMBER					MAP	XPATH	M	NUMBER
     pchar aField[MAX_CSV_COLUMNS];
     FieldMapping *pFieldMapping = NULL;
     FILE *pFile = NULL;
-    errno_t error_code;
+    int error_code;
     bool bCheck, bFound;
 
     // initialize number of columns and csv data lines
@@ -3996,7 +3993,7 @@ SECOND,20190104125900,NUM,5,0,1
     char szTempFieldValue[MAX_VALUE_SIZE];
     cpchar aFieldValue[MAX_CSV_COLUMNS];
     FILE *pFile = NULL;
-    errno_t error_code;
+    int error_code;
     xmlNodePtr pNode;
     char xpath[MAX_XPATH_SIZE];
     char xpath2[MAX_XPATH_SIZE];
